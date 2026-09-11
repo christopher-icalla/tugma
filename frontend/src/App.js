@@ -21,7 +21,9 @@ import Dashboard from "@/pages/app/Dashboard";
 import RegulatoryIntelligenceApp from "@/pages/app/RegulatoryIntelligenceApp";
 import ControlsApp from "@/pages/app/ControlsApp";
 import Transactions from "@/pages/app/Transactions";
+import TransactionDetail from "@/pages/app/TransactionDetail";
 import Exceptions from "@/pages/app/Exceptions";
+import ExceptionDetail from "@/pages/app/ExceptionDetail";
 import Evidence from "@/pages/app/Evidence";
 import Reports from "@/pages/app/Reports";
 import Settings from "@/pages/app/Settings";
@@ -54,7 +56,9 @@ function App() {
               <Route path="regulatory-intelligence" element={<RegulatoryIntelligenceApp />} />
               <Route path="controls" element={<ControlsApp />} />
               <Route path="transactions" element={<Transactions />} />
+              <Route path="transactions/:txId" element={<TransactionDetail />} />
               <Route path="exceptions" element={<Exceptions />} />
+              <Route path="exceptions/:code" element={<ExceptionDetail />} />
               <Route path="evidence" element={<Evidence />} />
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
