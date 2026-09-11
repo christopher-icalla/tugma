@@ -339,17 +339,20 @@ async def transition_exception(code: str, payload: TransitionInput, user: dict =
     exc = await _get_exc(user["organization_id"], code)
     to = payload.to_status.upper()
     current = exc["status"]
-    if to not in ALLOWED_NEXT.get(current, []):
-        raise HTTPException(status_code=400, detail=f"Illegal transition {current} → {to}.")
 
-    # verification is a separate, gated permission
+    # role gate first, so a role-denied write always returns 403 (never 400)
     if to == "VERIFIED":
         if not can(user["role"], "exception:verify"):
             raise HTTPException(status_code=403, detail=f"Your role ({user['role']}) cannot verify exceptions.")
-        if exc.get("resolved_by") and exc["resolved_by"] == user["id"]:
-            raise HTTPException(status_code=403, detail="Independent verification required: the verifier must differ from the user who resolved the exception (segregation of duties).")
     elif not can(user["role"], "exception:transition"):
         raise HTTPException(status_code=403, detail=f"Your role ({user['role']}) cannot change exception status.")
+
+    if to not in ALLOWED_NEXT.get(current, []):
+        raise HTTPException(status_code=400, detail=f"Illegal transition {current} → {to}.")
+
+    # independent verification (segregation of duties)
+    if to == "VERIFIED" and exc.get("resolved_by") and exc["resolved_by"] == user["id"]:
+        raise HTTPException(status_code=403, detail="Independent verification required: the verifier must differ from the user who resolved the exception (segregation of duties).")
 
     # RESOLVED requires evidence + a completed remediation action
     if to == "RESOLVED":
