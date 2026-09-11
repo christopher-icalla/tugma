@@ -54,3 +54,32 @@ export function shortDate(iso) {
 export function mono(text) {
   return <span className="font-mono text-xs text-slate-400">{text}</span>;
 }
+
+export function Pagination({ page, pages, total, onPage, testid = "pagination" }) {
+  if (!pages || pages <= 1) return (
+    <div data-testid={testid} className="flex items-center justify-between px-5 py-3 font-mono text-[11px] text-slate-500">
+      <span>{total} record{total === 1 ? "" : "s"}</span>
+    </div>
+  );
+  return (
+    <div data-testid={testid} className="flex items-center justify-between border-t border-slate-800 px-5 py-3 font-mono text-[11px] text-slate-400">
+      <span>{total.toLocaleString()} records · page {page} of {pages}</span>
+      <div className="flex items-center gap-2">
+        <button data-testid="pagination-prev" disabled={page <= 1} onClick={() => onPage(page - 1)}
+          className="rounded-md border border-slate-700 px-3 py-1.5 transition-colors hover:border-sky-500/50 hover:text-sky-300 disabled:opacity-40">Prev</button>
+        <button data-testid="pagination-next" disabled={page >= pages} onClick={() => onPage(page + 1)}
+          className="rounded-md border border-slate-700 px-3 py-1.5 transition-colors hover:border-sky-500/50 hover:text-sky-300 disabled:opacity-40">Next</button>
+      </div>
+    </div>
+  );
+}
+
+export function Select({ value, onChange, options, placeholder, testid }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} data-testid={testid}
+      className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-xs text-slate-200 outline-none transition-colors focus:border-sky-500">
+      <option value="">{placeholder}</option>
+      {options.map((o) => <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>)}
+    </select>
+  );
+}

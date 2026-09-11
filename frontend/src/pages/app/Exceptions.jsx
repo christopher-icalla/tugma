@@ -1,86 +1,86 @@
 import React from "react";
-import { useApi, PageHeader, Card, shortDate } from "@/components/app/shared";
+import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
+import { api } from "@/lib/api";
+import { PageHeader, Card, shortDate, Pagination, Select } from "@/components/app/shared";
 import { LoadingState, ErrorState, EmptyState } from "@/components/States";
 import { StatusBadge } from "@/components/StatusBadge";
 
-export default function Exceptions() {
-  const { loading, error, data, reload } = useApi("/exceptions");
-  const [open, setOpen] = React.useState(null);
-  if (loading) return <LoadingState label="Loading exceptions" />;
-  if (error) return <ErrorState description="Exceptions could not be loaded." onRetry={reload} />;
+const CONTROL_OPTS = [{ value: "CTRL-005", label: "CTRL-005 Settlement" }, { value: "CTRL-002", label: "CTRL-002 Authorization" }, { value: "CTRL-004", label: "CTRL-004 Evidence" }];
+const SEV_OPTS = ["HIGH", "MEDIUM", "LOW"];
+const STATUS_OPTS = ["OPEN", "IN_REVIEW", "REMEDIATION", "RESOLVED", "VERIFIED"];
 
-  const exceptions = data.exceptions || [];
+export default function Exceptions() {
+  const navigate = useNavigate();
+  const [params, setParams] = React.useState({ page: 1, search: "", control: "", severity: "", status: "" });
+  const [searchInput, setSearchInput] = React.useState("");
+  const [data, setData] = React.useState(null);
+  const [state, setState] = React.useState({ loading: true, error: false });
+
+  const load = React.useCallback(async () => {
+    setState({ loading: true, error: false });
+    try {
+      const { data } = await api.get("/exceptions", { params: { ...params, page_size: 25 } });
+      setData(data);
+      setState({ loading: false, error: false });
+    } catch {
+      setState({ loading: false, error: true });
+    }
+  }, [params]);
+
+  React.useEffect(() => { load(); }, [load]);
+  const update = (patch) => setParams((p) => ({ ...p, ...patch, page: patch.page ?? 1 }));
+  const submitSearch = (e) => { e.preventDefault(); update({ search: searchInput }); };
 
   return (
     <div>
       <PageHeader eyebrow="Exceptions" title="Control Exceptions"
-        subtitle="Failed control tests routed to owners with remediation actions and evidence requirements." />
+        subtitle="Every exception is created automatically by a deterministic control failure and links back to its transaction and evidence." />
 
-      {exceptions.length === 0 ? (
-        <EmptyState title="No exceptions" description="No control exceptions have been raised in this environment." />
-      ) : (
+      <Card className="mb-4 p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <form onSubmit={submitSearch} className="relative flex-1 min-w-[220px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search code, title or TX id…" data-testid="exc-search"
+              className="w-full rounded-md border border-slate-700 bg-slate-950 py-2 pl-9 pr-3 text-sm text-slate-100 outline-none transition-colors focus:border-sky-500" />
+          </form>
+          <Select value={params.control} onChange={(v) => update({ control: v })} options={CONTROL_OPTS} placeholder="All controls" testid="exc-filter-control" />
+          <Select value={params.severity} onChange={(v) => update({ severity: v })} options={SEV_OPTS} placeholder="All severities" testid="exc-filter-severity" />
+          <Select value={params.status} onChange={(v) => update({ status: v })} options={STATUS_OPTS} placeholder="All statuses" testid="exc-filter-status" />
+        </div>
+      </Card>
+
+      {state.loading ? <LoadingState label="Loading exceptions" /> : state.error ? <ErrorState description="Exceptions could not be loaded." onRetry={load} /> : (
         <Card testid="exceptions-table" className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-left font-mono text-[11px] uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-3">Code</th>
-                  <th className="px-5 py-3">Title</th>
-                  <th className="px-5 py-3">Severity</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Detected</th>
-                  <th className="px-5 py-3">Due</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {exceptions.map((e) => (
-                  <React.Fragment key={e.id}>
-                    <tr onClick={() => setOpen(open === e.id ? null : e.id)} data-testid={`exc-row-${e.id}`} className="cursor-pointer transition-colors hover:bg-slate-900/60">
-                      <td className="px-5 py-3 font-mono text-xs text-slate-400">{e.exception_code}</td>
+          {data.exceptions.length === 0 ? (
+            <div className="p-5"><EmptyState title="No matching exceptions" description="Adjust your filters, or all exceptions in this view are resolved." /></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 text-left font-mono text-[11px] uppercase tracking-wider text-slate-500">
+                    <th className="px-5 py-3">Code</th><th className="px-5 py-3">Title</th><th className="px-5 py-3">Control</th>
+                    <th className="px-5 py-3">Severity</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Detected</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {data.exceptions.map((e) => (
+                    <tr key={e.id} data-testid={`exc-row-${e.exception_code}`} onClick={() => navigate(`/app/exceptions/${e.exception_code}`)} className="cursor-pointer transition-colors hover:bg-slate-900/60">
+                      <td className="px-5 py-3 font-mono text-xs text-sky-300">{e.exception_code}</td>
                       <td className="px-5 py-3 text-slate-200">{e.title}</td>
+                      <td className="px-5 py-3 font-mono text-xs text-slate-400">{e.control_code}</td>
                       <td className="px-5 py-3"><StatusBadge value={e.severity} /></td>
                       <td className="px-5 py-3"><StatusBadge value={e.status} /></td>
                       <td className="px-5 py-3 font-mono text-xs text-slate-500">{shortDate(e.detected_at)}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-slate-500">{shortDate(e.due_date)}</td>
                     </tr>
-                    {open === e.id && (
-                      <tr className="bg-slate-950/40">
-                        <td colSpan={6} className="px-5 py-5">
-                          <p className="text-sm text-slate-300">{e.description}</p>
-                          <div className="mt-3 grid gap-3 md:grid-cols-3 font-mono text-xs">
-                            <Detail k="Control" v={e.control_id?.replace("ctl-", "").toUpperCase()} />
-                            <Detail k="Transaction" v={e.transaction_id} />
-                            <Detail k="Owner Role" v={e.owner_role} />
-                            {e.root_cause && <Detail k="Root Cause" v={e.root_cause} />}
-                            {e.remediation_summary && <Detail k="Remediation" v={e.remediation_summary} />}
-                          </div>
-                          {e.remediation_actions?.length > 0 && (
-                            <div className="mt-4">
-                              <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Remediation Actions</p>
-                              <div className="mt-2 space-y-2">
-                                {e.remediation_actions.map((a) => (
-                                  <div key={a.id} className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-900/50 px-4 py-2.5">
-                                    <span className="text-xs text-slate-300">{a.action}</span>
-                                    <StatusBadge value={a.status} />
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <Pagination page={data.page} pages={data.pages} total={data.total} onPage={(p) => update({ page: p })} />
         </Card>
       )}
     </div>
   );
-}
-
-function Detail({ k, v }) {
-  return <div><span className="text-slate-500">{k}: </span><span className="text-slate-300">{v || "—"}</span></div>;
 }

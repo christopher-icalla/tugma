@@ -1,5 +1,29 @@
 # TUGMA — Product Requirements Document
 
+## Implemented (2026-09-11 — Phase 2: Control Engine + Dataset)
+- ✅ Deterministic dataset (`dataset.py`, seed=42): exactly 10,000 transactions, ~150 merchants, PHP, with injected traceable defects — 60 settlement discrepancies, 7 payout breaches, 15 duplicates, 25 missing approvals, 5 segregation-of-duty, 10 missing evidence, plus 150 unsettled (NOT_TESTABLE). Hero TX-847291 = ₱10,000 settlement vs ₱9,500 actual (₱500 variance).
+- ✅ Deterministic control engine (`engine.py`): runs CTRL-001..005 producing genuine PASS/FAIL/WARNING/NOT_TESTABLE from real field comparisons; appends control_test_runs (never overwrites); auto-creates exceptions with structured explainability + remediation actions (idempotent by exception_code, preserves workflow status); writes per-transaction result flags for fast filtering; derives a real evidence package + conceptual NOT_SUBMITTED Stellar attestation.
+- ✅ Results: 122 exceptions (CTRL-005=82, CTRL-002=30, CTRL-004=10 warnings); CTRL-003 NOT_TESTABLE; CTRL-001 vendor check with 1 warning. High-risk=72.
+- ✅ Dashboard fully DB-backed (no hard-coded metrics). Transactions page with server-side pagination/search/filter/sort over 10k. Transaction detail with money-flow + control results + linked exceptions. Exception detail with "WHY TUGMA FLAGGED THIS" explainability generated from the real test result + 5-state workflow. Control detail with regulatory mapping (source→requirement→interpretation→automated test), latest + historical runs, and related exceptions. POST /api/controls/run for new historical runs.
+- ✅ Tested: backend 26/26 pytest, frontend 100%. Hero acceptance path verified: TX-847291 → CTRL-005 → ₱500 → FAILED → exception → Dashboard/Exceptions → explainability.
+
+## Backlog (prioritized)
+### P0 (Phase 3)
+- Live Stellar Testnet attestation (currently NOT_SUBMITTED / conceptual SHA-256 only) + independent verification tooling.
+- Full evidence package workflow: capture/attach evidence records to exceptions & controls, finalize packages.
+### P1
+- Exception workflow actions (advance status, assign owner, record remediation) with audit-log writes + audit-log UI (append-only viewer).
+- Tighten multi-tenant scoping and CORS for production; throttle POST /api/controls/run.
+- Paginate related-exceptions on control detail for scale.
+### P2
+- AI-assisted (non-authoritative) summarization, mapping suggestions, exception explanations.
+- Real contact/lead capture + notifications.
+
+## Next Tasks
+1. Evidence capture + package finalization workflow (P0).
+2. Live Stellar Testnet attestation + verification (P0).
+3. Exception workflow actions + audit-log UI (P1).
+
 ## Original Problem Statement
 Build the first functional foundation of TUGMA, a B2B RegTech product ("Continuous Payment
 Control Intelligence") for Philippine regulated payment operators. Tagline: **Compliance You
