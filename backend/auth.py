@@ -26,6 +26,32 @@ JWT_ALGORITHM = "HS256"
 
 ROLES = ["ADMIN", "PAYMENT_OPS", "COMPLIANCE", "RISK", "FINANCE", "AUDITOR", "VIEWER"]
 
+# ---- RBAC permission matrix (single-org app: Layer 1 roles + SoD on verify) --
+_OPERATIONAL = {"ADMIN", "PAYMENT_OPS", "COMPLIANCE", "RISK", "FINANCE"}
+PERMISSIONS = {
+    "exception:assign": _OPERATIONAL,
+    "exception:transition": _OPERATIONAL,
+    "exception:remediate": _OPERATIONAL,
+    "exception:comment": _OPERATIONAL,
+    "evidence:create": _OPERATIONAL,
+    "exception:verify": {"ADMIN", "COMPLIANCE", "RISK"},
+    "package:generate": {"ADMIN", "COMPLIANCE"},
+    "audit:read": {"ADMIN", "COMPLIANCE", "AUDITOR"},
+}
+
+
+def can(role: str, action: str) -> bool:
+    return role in PERMISSIONS.get(action, set())
+
+
+def require_perm(action: str):
+    async def checker(user: dict = Depends(get_current_user)) -> dict:
+        if not can(user.get("role"), action):
+            raise HTTPException(status_code=403,
+                                detail=f"Your role ({user.get('role')}) is not permitted to {action.replace(':', ' ')}.")
+        return user
+    return checker
+
 MAX_FAILED = 5
 LOCKOUT_MINUTES = 15
 RESET_WINDOW_SECONDS = 900

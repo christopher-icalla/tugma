@@ -24,6 +24,16 @@
 2. Live Stellar Testnet attestation + verification (P0).
 3. Exception workflow actions + audit-log UI (P1).
 
+## Implemented (2026-09-11 — Phase 3: Evidence + Remediation + Evidence Package)
+- ✅ Exception workflow OPEN→IN_REVIEW→REMEDIATION→RESOLVED→VERIFIED (RESOLVED & VERIFIED distinct). Endpoints: assign, transition, remediation, comment. Gating: RESOLVED requires ≥1 attached evidence + a completed remediation action; VERIFIED requires the `exception:verify` permission AND an independent verifier (resolver ≠ verifier, SoD).
+- ✅ Evidence Center: create evidence associated with requirement/control/test/exception/transaction/remediation; each record carries a real SHA-256 content hash; dynamic evidence completeness (`/api/evidence/completeness`). No fabricated evidence.
+- ✅ Evidence chain per exception (`/api/exceptions/{code}/chain`): REGULATION→REQUIREMENT→CONTROL→TEST→TRANSACTION→EXCEPTION→REMEDIATION→EVIDENCE, each step linking to its record.
+- ✅ Evidence Package generation for a reporting period (`/api/evidence-packages/generate`): gathers sources/requirements/controls/runs/transactions/exceptions/remediations/evidence, computes counts + completeness, canonicalizes deterministically and stores a real SHA-256 (same package ⇒ same hash, verified). Stellar shown as `NOT_SUBMITTED` — "Stellar Testnet Attestation — Coming in next phase" (no keys, no broadcast).
+- ✅ RBAC (single-org, Layer-1 roles + SoD): operational writes = ADMIN/PAYMENT_OPS/COMPLIANCE/RISK/FINANCE; verify = ADMIN/COMPLIANCE/RISK; package generate = ADMIN/COMPLIANCE; audit read = ADMIN/COMPLIANCE/AUDITOR. AUDITOR & VIEWER read-only; verified server-side (UI mirrors for gating only).
+- ✅ Append-only audit_logs for assign/transition/remediation/evidence upload/verification/package generation (no update/delete route). Per-exception audit history + Settings audit-trail view.
+- ✅ Dashboard Evidence Readiness (evidence-based) + Open Remediation computed from real records.
+- ✅ Tested: Phase 3 backend 15 tests + Phase 2 regression 26/26, frontend 100%. Hero flow verified: TX-847291 → assign → REMEDIATION → (resolve blocked w/o evidence) → evidence + remediation → RESOLVED → (same-user verify blocked, SoD) → COMPLIANCE VERIFIED → generate package → deterministic SHA-256. (TX-847291 reset to OPEN for a repeatable live demo.)
+
 ## Original Problem Statement
 Build the first functional foundation of TUGMA, a B2B RegTech product ("Continuous Payment
 Control Intelligence") for Philippine regulated payment operators. Tagline: **Compliance You

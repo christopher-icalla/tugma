@@ -277,10 +277,10 @@ async def run_all_controls(triggered_by="system"):
 async def _build_package(started):
     total_tx = await db.payment_transactions.count_documents({"organization_id": DEMO_ORG_ID})
     total_exc = await db.exceptions.count_documents({"organization_id": DEMO_ORG_ID})
-    verified = await db.exceptions.count_documents({"organization_id": DEMO_ORG_ID, "status": {"$in": ["RESOLVED", "VERIFIED"]}})
+    exc_with_ev = await db.evidence.distinct("exception_id", {"organization_id": DEMO_ORG_ID, "exception_id": {"$ne": None}})
     evidence_count = await db.evidence.count_documents({"organization_id": DEMO_ORG_ID})
-    readiness = round(100 * verified / total_exc) if total_exc else 100
-    summary = f"tugma|tx={total_tx}|exc={total_exc}|verified={verified}|evidence={evidence_count}"
+    readiness = round(100 * len(exc_with_ev) / total_exc) if total_exc else 0
+    summary = f"tugma|tx={total_tx}|exc={total_exc}|ev_exc={len(exc_with_ev)}|evidence={evidence_count}"
     canonical = _sha(summary)
     pkg_id = "pkg-2026-q1"
     await db.evidence_packages.update_one({"id": pkg_id}, {"$set": {
