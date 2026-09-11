@@ -1,8 +1,11 @@
 import React from "react";
+import { api } from "@/lib/api";
 import { useApi, PageHeader, Card } from "@/components/app/shared";
 import { LoadingState, ErrorState } from "@/components/States";
 import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/StatusBadge";
+import { can } from "@/lib/perms";
+import { shortDate } from "@/components/app/shared";
 
 const ROLE_DESC = {
   ADMIN: "Full administrative access to the organization and its configuration.",
@@ -78,6 +81,8 @@ export default function Settings() {
           ))}
         </div>
       </Card>
+
+      {can(user.role, "audit:read") && <AuditTrail />}
     </div>
   );
 }
@@ -88,5 +93,36 @@ function Row({ k, v, raw }) {
       <dt className="text-slate-500">{k}</dt>
       <dd className="text-slate-200">{raw ? v : <span className="break-all">{v}</span>}</dd>
     </div>
+  );
+}
+
+function AuditTrail() {
+  const [logs, setLogs] = React.useState(null);
+  React.useEffect(() => { api.get("/audit-logs?limit=50").then(({ data }) => setLogs(data.audit_logs)).catch(() => setLogs([])); }, []);
+  return (
+    <Card className="mt-6 p-6" testid="audit-trail">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Audit Trail — append-only ({logs ? logs.length : "…"})</p>
+      {!logs ? <p className="mt-3 text-sm text-slate-400">Loading…</p> : logs.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-400">No audit records yet.</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b border-slate-800 text-left font-mono text-[11px] uppercase tracking-wider text-slate-500">
+              <th className="py-2 pr-4">Action</th><th className="py-2 pr-4">Entity</th><th className="py-2 pr-4">User</th><th className="py-2 pr-4">When</th>
+            </tr></thead>
+            <tbody className="divide-y divide-slate-800 font-mono text-xs">
+              {logs.map((a) => (
+                <tr key={a.id} data-testid={`audit-row-${a.id}`}>
+                  <td className="py-2 pr-4 text-slate-300">{a.action}</td>
+                  <td className="py-2 pr-4 text-slate-400">{a.entity_type}</td>
+                  <td className="py-2 pr-4 text-slate-400">{a.user_name} · {a.user_role}</td>
+                  <td className="py-2 pr-4 text-slate-500">{shortDate(a.timestamp)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }

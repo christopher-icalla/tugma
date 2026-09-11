@@ -59,6 +59,10 @@ async def startup():
     await db.exceptions.create_index("transaction_id")
     await db.control_test_runs.create_index("control_code")
     await db.control_test_runs.create_index("completed_at")
+    await db.audit_logs.create_index("entity_id")
+    await db.audit_logs.create_index("timestamp")
+    await db.evidence.create_index("exception_id")
+    await db.evidence.create_index("control_id")
 
     await auth.seed_users()
     await seed_static()
