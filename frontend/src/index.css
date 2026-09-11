@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tg-bg: #090d16;
+  --tg-surface: #0f172a;
+  --tg-border: #1e293b;
+  --tg-accent: #0ea5e9;
+}
+
+html, body, #root {
+  background-color: var(--tg-bg);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+.font-mono, code, pre { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+
+::selection { background: rgba(14, 165, 233, 0.3); color: #f1f5f9; }
+
+/* Slim scrollbars for the dark surfaces */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0b1220; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+@keyframes tg-flow-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+@keyframes tg-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes tg-dash {
+  to { stroke-dashoffset: -16; }
+}
+.tg-fade-up { animation: tg-fade-up 0.6s ease-out both; }
+.tg-flow-line { stroke-dasharray: 4 6; animation: tg-dash 1.4s linear infinite; }
+
+@layer base {
+  * { border-color: #1e293b; }
+}

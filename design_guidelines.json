@@ -1,0 +1,74 @@
+{
+  "project_name": "TUGMA",
+  "tagline": "Compliance You Can Prove",
+  "category": "Continuous Payment Control Intelligence",
+  "app_type": "hybrid_fullstack",
+  "visual_theme": {
+    "archetype": "Deep Institutional Financial Infrastructure / RegTech Slate",
+    "primary_background": "slate-950 / #090D16",
+    "card_background": "slate-900/90 / #0F172A",
+    "surface_border": "slate-800/80 / #1E293B",
+    "accent_primary": "sky-500 / #0EA5E9",
+    "accent_brand_hover": "sky-400 / #38BDF8",
+    "status_colors": {
+      "passed_active": "emerald-500 / #10B981",
+      "warning_medium": "amber-500 / #F59E0B",
+      "critical_high": "rose-500 / #EF4444",
+      "info_neutral": "slate-400 / #94A3B8"
+    }
+  },
+  "typography": {
+    "font_family_heading": "Plus Jakarta Sans, sans-serif",
+    "font_family_body": "Inter, sans-serif",
+    "font_family_mono": "JetBrains Mono, Fira Code, monospace",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-slate-50",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-slate-100",
+      "h3": "text-xl sm:text-2xl font-semibold text-slate-100",
+      "h4_card_title": "text-base sm:text-lg font-medium text-slate-200",
+      "body_text": "text-sm sm:text-base text-slate-300 leading-relaxed",
+      "mono_data": "font-mono text-xs sm:text-sm tracking-wide text-slate-300",
+      "label_overline": "text-xs font-mono uppercase tracking-widest text-sky-400"
+    }
+  },
+  "layout_and_spacing": {
+    "container_padding": "px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto",
+    "section_spacing": "py-16 sm:py-24",
+    "bento_grid": "grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6",
+    "sidebar_width": "w-64 min-h-screen border-r border-slate-800 bg-slate-950 text-slate-200"
+  },
+  "components_and_experience": {
+    "public_marketing_page": {
+      "animated_hero": "Vertical conceptual flow diagram: REGULATION → REQUIREMENT → CONTROL → PAYMENT ACTIVITY → AUTOMATED TEST → EXCEPTION → REMEDIATION → EVIDENCE → VERIFICATION → PROOF with glowing active nodes.",
+      "problem_section": "Convergence visual mapping Bank, Payment Processor, ERP, Spreadsheet, AML System, Email, Merchant Portal, Cloud Storage -> TUGMA central engine.",
+      "code_showcase": "Dark monospaced terminal cards representing Python control engine & evidence verification (CTRL-005 Settlement Reconciliation, 10,000 tx, 9,873 passed, 127 exceptions, EVIDENCE COMPLETENESS 87%).",
+      "how_it_works_steps": ["MAP", "DEFINE", "TEST", "RESOLVE", "PROVE"],
+      "regulatory_intelligence_cards": "BSP (Bangko Sentral ng Pilipinas) & AMLC (Anti-Money Laundering Council) regulatory source feed cards.",
+      "stellar_explainer": "Cryptographic evidence integrity badge labeled 'Prototype / Testnet' showcasing immutable hash verification."
+    },
+    "authenticated_app": {
+      "banner": "Synthetic Demonstration Environment — No Production Payment Data",
+      "persistent_sidebar": "Brand TUGMA + CONTROL CENTER (Dashboard, Regulatory Intelligence, Controls, Transactions, Exceptions, Evidence, Reports) + Admin (Settings) + Footer ('TUGMA Demo PSP / Payment Operations')",
+      "dashboard_kpis": ["Transactions Analyzed", "Controls Tested", "Exceptions", "High Risk", "Evidence Readiness", "Open Remediation"],
+      "sections": ["Control Health Overview", "Priority Exceptions Table", "Data Integrity Stream"],
+      "states_handling": "Explicit empty states, loading skeletons, error states with clear retry triggers, and permission-denied indicators."
+    }
+  },
+  "general_ui_ux_guidelines": {
+    "testing_attribute_requirement": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case format (e.g. data-testid=\"login-submit-button\", data-testid=\"kpi-card-exceptions\").",
+    "color_rules": "Never use pure #000000. Use slate-950 (#090D16). Never use single color for status without icon or text label.",
+    "hover_states": "Always specify explicit hover colors (e.g., hover:bg-slate-800 hover:text-white).",
+    "contrast_standards": "Ensure high text contrast meeting APCA/WCAG standards against dark surfaces."
+  },
+  "image_urls": {
+    "security_dashboard_preview": "https://images.unsplash.com/photo-1751448555253-f39c06e29d82?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwzfHxmaW5hbmNpYWwlMjB0ZWNobm9sb2d5JTIwY29tcGxpYW5jZSUyMHNlY3VyaXR5JTIwaW5mcmFzdHJ1Y3R1cmV8ZW58MHx8fHwxNzg5MTI3ODQ3fDA&ixlib=rb-4.1.0&q=85",
+    "financial_trading_monitoring": "https://images.unsplash.com/photo-1748439435495-722cc1728b7e?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwyfHxmaW5hbmNpYWwlMjB0ZWNobm9sb2d5JTIwY29tcGxpYW5jZSUyMHNlY3VyaXR5JTIwaW5mcmFzdHJ1Y3R1cmV8ZW58MHx8fHwxNzg5MTI3ODQ3fDA&ixlib=rb-4.1.0&q=85",
+    "cryptographic_key_lock": "https://images.unsplash.com/photo-1633265486064-086b219458ec?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxmaW5hbmNpYWwlMjB0ZWNobm9sb2d5JTIwY29tcGxpYW5jZSUyMHNlY3VyaXR5JTIwaW5mcmFzdHJ1Y3R1cmV8ZW58MHx8fHwxNzg5MTI3ODQ3fDA&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": [
+    "Follow this design system strictly. Use React components with Tailwind CSS.",
+    "Ensure the application supports both public marketing views and authenticated RegTech SaaS views.",
+    "Every button, input, card, table row, and tab MUST include a data-testid attribute.",
+    "Maintain monospace code showcase aesthetic for technical proof panels."
+  ]
+}
