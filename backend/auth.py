@@ -333,7 +333,7 @@ async def seed_users():
     if not existing:
         await db.users.insert_one({
             "id": str(uuid.uuid4()), "email": admin_email,
-            "password_hash": hash_password(admin_password), "name": "Nelson (Owner)",
+            "password_hash": hash_password(admin_password), "name": "TUGMA Administrator",
             "role": "ADMIN", "title": "Administrator", "organization_id": DEMO_ORG_ID,
             "token_version": 0, "created_at": datetime.now(timezone.utc).isoformat()})
     elif not verify_password(admin_password, existing["password_hash"]):
