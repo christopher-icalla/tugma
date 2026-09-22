@@ -1,10 +1,9 @@
-"""Iteration 4 FINAL acceptance checks.
+"""Cross-cutting acceptance checks for the TUGMA MVP.
 
-The hero OPEN->VERIFIED flow is exercised by test_tugma_phase3.py (which we
-already ran and passed 15/15). This file adds the *extra cross-cutting*
-acceptance requirements from the review request that are not directly
-covered by phase3, and captures the concrete artifacts (exception id,
-package id, canonical hash, regenerated hash).
+These tests cover acceptance requirements not directly exercised by the
+core phase tests, including artifact capture, deterministic evidence
+packages, auditor permissions, append-only audit logs, Stellar submission
+state, verification permissions, and database-derived KPIs.
 """
 import os
 import re
