@@ -5,13 +5,6 @@ import { formatApiErrorDetail } from "@/lib/api";
 import { TugmaMark } from "@/components/public/PublicChrome";
 import { Loader2 } from "lucide-react";
 
-const QUICK = [
-  ["nelson@patika.dev", "ADMIN"],
-  ["compliance@tugmademo.ph", "COMPLIANCE"],
-  ["ops@tugmademo.ph", "PAYMENT_OPS"],
-  ["auditor@tugmademo.ph", "AUDITOR"],
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -81,23 +74,6 @@ export default function Login() {
               {loading && <Loader2 className="h-4 w-4 animate-spin" />} Sign In
             </button>
           </form>
-
-          <div className="mt-8 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-            <p className="font-mono text-[11px] uppercase tracking-widest text-slate-500">Demo accounts — click to fill</p>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {QUICK.map(([em, role]) => (
-                <button
-                  key={em} type="button"
-                  onClick={() => { setEmail(em); setPassword(em === "nelson@patika.dev" ? "TugmaAdmin!2026" : "TugmaDemo!2026"); }}
-                  data-testid={`quick-fill-${role.toLowerCase()}`}
-                  className="rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-left text-[11px] transition-colors hover:border-sky-500/50"
-                >
-                  <span className="block font-mono text-slate-300">{role}</span>
-                  <span className="block truncate text-slate-500">{em}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           <Link to="/" className="mt-6 block text-center text-xs text-slate-500 hover:text-slate-300">← Back to website</Link>
         </div>
