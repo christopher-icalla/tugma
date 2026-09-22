@@ -12,11 +12,17 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 EXC = "EXC-CTRL-005-TX-847291"
 
-ADMIN = ("nelson@patika.dev", "[REDACTED]")
-COMPLIANCE = ("compliance@tugmademo.ph", "[REDACTED]")
-OPS = ("ops@tugmademo.ph", "[REDACTED]")
-AUDITOR = ("auditor@tugmademo.ph", "[REDACTED]")
-VIEWER = ("viewer@tugmademo.ph", "[REDACTED]")
+ADMIN = (
+    os.environ["ADMIN_EMAIL"],
+    os.environ["ADMIN_PASSWORD"],
+)
+
+DEMO_PASSWORD = os.environ["DEMO_USER_PASSWORD"]
+
+COMPLIANCE = ("compliance@tugmademo.ph", DEMO_PASSWORD)
+OPS = ("ops@tugmademo.ph", DEMO_PASSWORD)
+AUDITOR = ("auditor@tugmademo.ph", DEMO_PASSWORD)
+VIEWER = ("viewer@tugmademo.ph", DEMO_PASSWORD)
 
 
 def _login(email, password):
