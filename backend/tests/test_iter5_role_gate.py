@@ -1,7 +1,7 @@
-"""Iteration 5: verify the transition-endpoint fix.
+"""Role-based access control checks for exception transitions.
 
-The role gate now runs BEFORE the ALLOWED_NEXT legality check, so a role-denied
-write returns 403 regardless of whether the target state is legal or terminal.
+These tests verify that users without the required permissions receive
+HTTP 403 responses for prohibited exception state changes.
 """
 import os
 import requests
@@ -9,8 +9,11 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 EXC = "EXC-CTRL-005-TX-847291"
 
-AUDITOR = ("auditor@tugmademo.ph", "TugmaDemo!2026")
-VIEWER = ("viewer@tugmademo.ph", "TugmaDemo!2026")
+DEMO_PASSWORD = os.environ["DEMO_USER_PASSWORD"]
+
+AUDITOR = ("auditor@tugmademo.ph", DEMO_PASSWORD)
+VIEWER = ("viewer@tugmademo.ph", DEMO_PASSWORD)
+OPS = ("ops@tugmademo.ph", DEMO_PASSWORD)
 OPS = ("ops@tugmademo.ph", "TugmaDemo!2026")
 
 
