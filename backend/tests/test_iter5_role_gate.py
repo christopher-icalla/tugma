@@ -14,7 +14,7 @@ DEMO_PASSWORD = os.environ["DEMO_USER_PASSWORD"]
 AUDITOR = ("auditor@tugmademo.ph", DEMO_PASSWORD)
 VIEWER = ("viewer@tugmademo.ph", DEMO_PASSWORD)
 OPS = ("ops@tugmademo.ph", DEMO_PASSWORD)
-OPS = ("ops@tugmademo.ph", "TugmaDemo!2026")
+
 
 
 def _login(cred):
