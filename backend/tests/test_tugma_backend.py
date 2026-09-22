@@ -5,10 +5,10 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL").rstrip("/")
 
-ADMIN_EMAIL = "nelson@patika.dev"
-ADMIN_PASSWORD = "TugmaAdmin!2026"
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+ADMIN_PASSWORD = os.environ["ADMIN_PASSWORD"]
 COMPLIANCE_EMAIL = "compliance@tugmademo.ph"
-DEMO_PASSWORD = "TugmaDemo!2026"
+DEMO_PASSWORD = os.environ["DEMO_USER_PASSWORD"]
 
 
 @pytest.fixture(scope="module")
