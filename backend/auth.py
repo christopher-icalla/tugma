@@ -57,8 +57,8 @@ LOCKOUT_MINUTES = 15
 RESET_WINDOW_SECONDS = 900
 RESET_MAX_REQUESTS = 5
 
-EMAIL_BASE_URL = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip().rstrip("/") or "https://integrations.emergentagent.com"
-EMAIL_KEY = os.environ.get("EMERGENT_EMAIL_KEY", "")
+EMAIL_BASE_URL = (os.environ.get("EMAIL_API_URL") or "").strip().rstrip("/")
+EMAIL_KEY = os.environ.get("EMAIL_API_KEY", "")
 EMAIL_FROM_NAME = os.environ.get("EMAIL_FROM_NAME") or "TUGMA"
 
 
