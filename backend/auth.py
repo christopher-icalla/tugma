@@ -325,7 +325,7 @@ DEMO_USERS = [
 
 
 async def seed_users():
-    admin_email = os.environ.get("ADMIN_EMAIL", "admin@example.com").strip().lower()
+    admin_email = os.environ["ADMIN_EMAIL"].strip().lower()
     admin_password = os.environ["ADMIN_PASSWORD"]
     demo_password = os.environ["DEMO_USER_PASSWORD"]
 
