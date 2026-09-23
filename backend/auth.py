@@ -182,7 +182,7 @@ async def send_password_reset_email(to_email: str, token: str) -> bool:
         if urlparse(base).hostname in ("localhost", "127.0.0.1", "::1"):
             logger.warning("Email not configured; password reset link: %s", link)
         else:
-            logger.error("Password reset email not configured (EMERGENT_EMAIL_KEY / FRONTEND_URL)")
+            logger.error("Password reset email not configured (EMAIL_API_KEY / FRONTEND_URL)")
         return False
     brand = escape(EMAIL_FROM_NAME)
     html = (
