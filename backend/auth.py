@@ -331,14 +331,30 @@ async def seed_users():
 
     existing = await db.users.find_one({"email": admin_email})
     if not existing:
-        await db.users.insert_one({
-            "id": str(uuid.uuid4()), "email": admin_email,
-            "password_hash": hash_password(admin_password), "name": "TUGMA Administrator",
-            "role": "ADMIN", "title": "Administrator", "organization_id": DEMO_ORG_ID,
-            "token_version": 0, "created_at": datetime.now(timezone.utc).isoformat()})
+        # Rename the single existing demo-org ADMIN instead of creating a duplicate.
+        admins = await db.users.find(
+            {"organization_id": DEMO_ORG_ID, "role": "ADMIN"}
+        ).to_list(2)
+
+        if len(admins) == 1:
+            await db.users.update_one(
+                {"id": admins[0]["id"]},
+                {"$set": {
+                    "email": admin_email,
+                    "name": "Chris Icalla",
+                }},
+            )
+        else:
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()), "email": admin_email,
+                "password_hash": hash_password(admin_password), "name": "TUGMA Administrator",
+                "role": "ADMIN", "title": "Administrator", "organization_id": DEMO_ORG_ID,
+                "token_version": 0, "created_at": datetime.now(timezone.utc).isoformat()})
     elif not verify_password(admin_password, existing["password_hash"]):
-        await db.users.update_one({"email": admin_email},
-                                  {"$set": {"password_hash": hash_password(admin_password)}})
+        await db.users.update_one(
+            {"email": admin_email},
+            {"$set": {"password_hash": hash_password(admin_password)}},
+        )
 
     for u in DEMO_USERS:
         if not await db.users.find_one({"email": u["email"]}):
