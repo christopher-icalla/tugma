@@ -11,6 +11,8 @@ const TONES = {
   not_testable: "bg-slate-500/10 text-slate-300 border-slate-500/30",
   not_submitted: "bg-slate-500/10 text-slate-300 border-slate-500/30",
   draft: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+  attested: "bg-sky-500/10 text-sky-300 border-sky-500/30",
+  finalized: "bg-sky-500/10 text-sky-300 border-sky-500/30",
   settled: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
   medium: "bg-amber-500/10 text-amber-300 border-amber-500/30",
   warning: "bg-amber-500/10 text-amber-300 border-amber-500/30",

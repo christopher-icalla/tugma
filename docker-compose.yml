@@ -1,0 +1,30 @@
+# Local stack: PostgreSQL + TUGMA API. Run the frontend with `yarn start` in frontend/.
+#   cp backend/.env.example backend/.env   # then edit secrets
+#   docker compose up --build
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tugma
+      POSTGRES_PASSWORD: tugma
+      POSTGRES_DB: tugma
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tugma"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://tugma:tugma@db:5432/tugma?schema=public
+    ports: ["8001:8001"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

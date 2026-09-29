@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { StatusBadge } from "@/components/StatusBadge";
 import { can } from "@/lib/perms";
 import { shortDate } from "@/components/app/shared";
+import StellarWallet from "@/components/app/StellarWallet";
 
 const ROLE_DESC = {
   ADMIN: "Full administrative access to the organization and its configuration.",
@@ -69,6 +70,8 @@ export default function Settings() {
           </div>
         </Card>
       </div>
+
+      <StellarWallet />
 
       <Card className="mt-6 p-6" testid="roles-reference">
         <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Role-Based Authorization</p>
