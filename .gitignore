@@ -86,3 +86,9 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Rust / Soroban
+contracts/target/
+
+# Templates with placeholder values only
+!.env.example
