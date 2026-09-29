@@ -1,5 +1,5 @@
 import React from "react";
-import { FileBarChart, ShieldCheck, Loader2, Clock } from "lucide-react";
+import { FileBarChart, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { PageHeader, Card, shortDate } from "@/components/app/shared";
 import { LoadingState, ErrorState, EmptyState } from "@/components/States";
@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { useAuth } from "@/context/AuthContext";
 import { can } from "@/lib/perms";
 import { toast } from "sonner";
+import AttestationPanel from "@/components/app/AttestationPanel";
 
 export default function Reports() {
   const { user } = useAuth();
@@ -14,6 +15,7 @@ export default function Reports() {
   const [state, setState] = React.useState({ loading: true, error: false });
   const [form, setForm] = React.useState({ name: "Q1 2026 Evidence Package", period_start: "2026-01-01", period_end: "2026-03-31" });
   const [busy, setBusy] = React.useState(false);
+  const [stellarConfig, setStellarConfig] = React.useState(null);
   const canGenerate = can(user?.role, "package:generate");
 
   const load = React.useCallback(async () => {
@@ -26,6 +28,7 @@ export default function Reports() {
   }, []);
 
   React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => { api.get("/stellar/config").then(({ data }) => setStellarConfig(data)).catch(() => {}); }, []);
 
   const generate = async () => {
     setBusy(true);
@@ -43,7 +46,7 @@ export default function Reports() {
   return (
     <div>
       <PageHeader eyebrow="Reports" title="Evidence Packages & Integrity Proof"
-        subtitle="Generate a verifiable evidence package for a reporting period. The canonical package is hashed with SHA-256; the same package always reproduces the same hash." />
+        subtitle="Generate a verifiable evidence package for a reporting period. The canonical package is hashed with SHA-256 and the hash is anchored on Stellar by one authorized signer and countersigned by another." />
 
       <Card className="mb-6 p-6" testid="package-generator">
         <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Generate Evidence Package</p>
@@ -85,14 +88,7 @@ export default function Reports() {
                     <p className="mt-1 break-all font-mono text-[11px] text-emerald-300/80" data-testid={`pkg-hash-${p.id}`}>{p.canonical_hash}</p>
                   </div>
                 </div>
-                <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-5">
-                  <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-sky-400" /><span className="font-mono text-xs uppercase tracking-widest text-slate-300">Integrity Layer</span></div>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-400">The canonical package is hashed with SHA-256. Re-generating the same period reproduces an identical hash, proving the evidence set is unchanged.</p>
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-                    <Clock className="h-3.5 w-3.5 text-amber-300" />
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-amber-300">Stellar Testnet Attestation — Coming in next phase</span>
-                  </div>
-                </div>
+                <AttestationPanel pkg={p} stellarConfig={stellarConfig} onChange={load} />
               </div>
             </Card>
           ))}
