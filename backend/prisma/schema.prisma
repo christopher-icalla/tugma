@@ -1,0 +1,408 @@
+// TUGMA data model (PostgreSQL).
+//
+// Field names are snake_case on purpose: they are the public API contract the
+// React frontend reads, so records can be returned without a mapping layer.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------------ tenancy
+
+model Organization {
+  id          String   @id
+  name        String
+  country     String
+  industry    String
+  environment String
+  description String
+  created_at  DateTime
+
+  @@map("organizations")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password_hash     String
+  name              String
+  role              String
+  title             String?
+  organization_id   String
+  token_version     Int       @default(0)
+  created_at        DateTime  @default(now())
+  // Stellar account proven to belong to this user (SEP-53 signed message).
+  stellar_address   String?   @unique
+  stellar_linked_at DateTime?
+
+  @@index([organization_id])
+  @@map("users")
+}
+
+// -------------------------------------------------------------------- auth
+
+model LoginAttempt {
+  identifier   String    @id
+  email        String
+  count        Int
+  locked_until DateTime?
+  updated_at   DateTime
+
+  @@index([email])
+  @@map("login_attempts")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(uuid())
+  token_hash String   @unique
+  user_id    String
+  email      String
+  expires_at DateTime
+  used       Boolean  @default(false)
+
+  @@index([user_id])
+  @@map("password_reset_tokens")
+}
+
+model PasswordResetRequest {
+  id         String   @id @default(uuid())
+  email      String
+  created_at DateTime @default(now())
+
+  @@index([email, created_at])
+  @@map("password_reset_requests")
+}
+
+// -------------------------------------------------------- regulatory model
+
+model RegulatorySource {
+  id               String   @id
+  regulator        String
+  regulator_full   String
+  title            String
+  document_type    String
+  version          String
+  publication_date String
+  effective_date   String
+  jurisdiction     String
+  section          String
+  source_url       String
+  status           String
+  last_reviewed_at DateTime
+  content_hash     String
+  coverage         String[]
+
+  @@map("regulatory_sources")
+}
+
+model RegulatoryRequirement {
+  id                  String @id
+  source_id           String
+  requirement_code    String
+  section             String
+  title               String
+  requirement_summary String
+  regulatory_intent   String
+  applicability       String
+  effective_date      String
+  status              String
+
+  @@index([source_id])
+  @@map("regulatory_requirements")
+}
+
+model Control {
+  id              String   @id
+  organization_id String
+  control_code    String
+  name            String
+  requirement_id  String
+  category        String
+  risk_level      String
+  control_type    String
+  frequency       String
+  owner_role      String
+  objective       String
+  description     String
+  automated       Boolean
+  status          String
+  interpretation  String
+  test_logic      String
+  primary         Boolean  @default(false)
+  created_at      DateTime
+  updated_at      DateTime
+
+  @@unique([organization_id, control_code])
+  @@map("controls")
+}
+
+model ControlTest {
+  id               String   @id
+  control_id       String   @unique
+  name             String
+  description      String
+  data_sources     String[]
+  required_fields  String[]
+  logic_type       String
+  logic_definition String
+  threshold        String
+  frequency        String
+  active           Boolean
+
+  @@map("control_tests")
+}
+
+model Vendor {
+  id                   String   @id
+  organization_id      String
+  name                 String
+  category             String
+  criticality          String
+  due_diligence_status String
+  last_reviewed        DateTime
+
+  @@index([organization_id])
+  @@map("vendors")
+}
+
+// ------------------------------------------------------- payment activity
+
+model PaymentTransaction {
+  id                    String    @id
+  organization_id       String
+  transaction_id        String    @unique
+  merchant_id           String
+  currency              String
+  transaction_amount    Decimal   @db.Decimal(14, 2)
+  processor_amount      Decimal   @db.Decimal(14, 2)
+  expected_settlement   Decimal   @db.Decimal(14, 2)
+  actual_settlement     Decimal?  @db.Decimal(14, 2)
+  expected_payout       Decimal   @db.Decimal(14, 2)
+  actual_payout         Decimal?  @db.Decimal(14, 2)
+  transaction_timestamp DateTime
+  settlement_timestamp  DateTime?
+  payout_timestamp      DateTime?
+  payment_status        String
+  risk_status           String
+  idempotency_key       String
+  approval_status       String
+  initiated_by          String
+  approved_by           String
+  has_evidence          Boolean
+  duplicate_of          String?
+  created_at            DateTime
+  // Control-engine result flags (rewritten on every run, for fast filtering).
+  has_exception         Boolean   @default(false)
+  failed_controls       String[]  @default([])
+  defect_types          String[]  @default([])
+  test_status           String?
+  exception_severity    String?
+
+  @@index([organization_id, transaction_timestamp])
+  @@index([merchant_id])
+  @@index([payment_status])
+  @@index([risk_status])
+  @@index([test_status])
+  @@index([idempotency_key])
+  @@map("payment_transactions")
+}
+
+// --------------------------------------------------------- control engine
+
+model ControlTestRun {
+  id                 String   @id
+  organization_id    String
+  control_id         String?
+  control_code       String
+  control_test_id    String
+  started_at         DateTime
+  completed_at       DateTime
+  records_tested     Int
+  passed_count       Int
+  failed_count       Int
+  warning_count      Int
+  not_testable_count Int
+  status             String
+  triggered_by       String
+  execution_metadata Json
+
+  @@index([organization_id, control_code, completed_at])
+  @@map("control_test_runs")
+}
+
+model ControlException {
+  id                  String    @id
+  organization_id     String
+  exception_code      String    @unique
+  control_id          String?
+  control_code        String
+  control_test_run_id String?
+  transaction_id      String?
+  defect_type         String
+  title               String
+  description         String
+  explanation         Json
+  severity            String
+  status              String
+  detected_at         DateTime
+  due_date            DateTime
+  owner_role          String?
+  owner_id            String?
+  owner_name          String?
+  assigned_at         DateTime?
+  evidence_id         String?
+  root_cause          String?
+  resolved_at         DateTime?
+  resolved_by         String?
+  verified_at         DateTime?
+  verified_by         String?
+  verified_by_name    String?
+  verification_status String?
+  comments            Json      @default("[]")
+  updated_at          DateTime
+
+  @@index([organization_id, detected_at])
+  @@index([control_code])
+  @@index([status])
+  @@index([severity])
+  @@index([transaction_id])
+  @@map("exceptions")
+}
+
+model RemediationAction {
+  id              String    @id
+  exception_code  String    @unique
+  action          String
+  owner_role      String?
+  due_date        DateTime?
+  status          String
+  completion_note String?
+  completed_at    DateTime?
+  verified_by     String?
+  verified_at     DateTime?
+
+  @@map("remediation_actions")
+}
+
+// ---------------------------------------------------------------- evidence
+
+model Evidence {
+  id                  String    @id
+  organization_id     String
+  evidence_type       String
+  name                String
+  description         String?
+  source_system       String?
+  content             String?
+  file_reference      String?
+  requirement_id      String?
+  control_id          String?
+  control_test_id     String?
+  exception_id        String?
+  transaction_id      String?
+  remediation_id      String?
+  captured_at         DateTime
+  captured_by         String
+  content_hash        String
+  valid_from          DateTime
+  valid_until         DateTime?
+  verification_status String
+  created_at          DateTime
+
+  @@index([organization_id, exception_id])
+  @@index([control_id])
+  @@map("evidence")
+}
+
+model EvidencePackage {
+  id                 String   @id
+  organization_id    String
+  name               String
+  period_start       String
+  period_end         String
+  controls_count     Int
+  transactions_count Int
+  exceptions_count   Int
+  evidence_count     Int
+  completeness_score Int
+  canonical_hash     String
+  manifest           Json?
+  generated_at       DateTime
+  generated_by       String?
+  status             String
+
+  @@index([organization_id, generated_at])
+  @@map("evidence_packages")
+}
+
+// ------------------------------------------------------ Stellar / Soroban
+
+// One row per on-chain version of a package (the contract never overwrites).
+model StellarAttestation {
+  id                  String    @id @default(uuid())
+  organization_id     String
+  evidence_package_id String
+  network             String
+  contract_id         String
+  version             Int
+  attestation_hash    String    @unique
+  attester_address    String
+  attester_user_id    String?
+  attester_name       String
+  transaction_hash    String?
+  ledger              Int
+  submitted_at        DateTime
+  verifier_address    String?
+  verifier_user_id    String?
+  verifier_name       String?
+  countersign_tx_hash String?
+  countersign_ledger  Int?
+  verified_at         DateTime?
+  verification_status String
+
+  @@unique([evidence_package_id, version])
+  @@map("stellar_attestations")
+}
+
+// A transaction the API built for a user's wallet to sign. The submit step only
+// accepts a signed envelope whose hash matches, so the client can't swap calls.
+model StellarPendingTx {
+  id                  String    @id @default(uuid())
+  user_id             String
+  organization_id     String
+  evidence_package_id String
+  action              String
+  tx_hash             String    @unique
+  params              Json
+  expires_at          DateTime
+  submitted_at        DateTime?
+
+  @@index([user_id])
+  @@map("stellar_pending_txs")
+}
+
+// ------------------------------------------------------------------- audit
+
+// Append-only: the API exposes no update or delete route for this table.
+model AuditLog {
+  id              String   @id
+  organization_id String
+  user_id         String
+  user_name       String?
+  user_role       String?
+  action          String
+  entity_type     String
+  entity_id       String
+  before_state    Json?
+  after_state     Json?
+  timestamp       DateTime @default(now())
+
+  @@index([organization_id, timestamp])
+  @@index([entity_id])
+  @@map("audit_logs")
+}

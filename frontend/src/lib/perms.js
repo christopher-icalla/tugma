@@ -8,7 +8,10 @@ const PERMS = {
   "evidence:create": OPERATIONAL,
   "exception:verify": ["ADMIN", "COMPLIANCE", "RISK"],
   "package:generate": ["ADMIN", "COMPLIANCE"],
+  "package:attest": ["ADMIN", "COMPLIANCE"],
+  "package:countersign": ["ADMIN", "COMPLIANCE", "RISK"],
   "audit:read": ["ADMIN", "COMPLIANCE", "AUDITOR"],
+  "controls:run": ["ADMIN", "PAYMENT_OPS", "RISK", "COMPLIANCE"],
 };
 
 export function can(role, action) {

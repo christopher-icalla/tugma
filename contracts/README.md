@@ -29,6 +29,24 @@ Events: `Attested`, `Countersigned`, `SignerChanged` (topics: org, package_id).
 Secret keys live in the Stellar CLI's local identity store (`~/.config/stellar/identity/`), not in this repo.
 Package `smoke-test` v1 was attested and countersigned as a deployment check.
 
+## Using it from the TUGMA app
+
+The API (`backend/src/stellar/`) talks to this contract through Soroban RPC. It never
+holds keys: it builds and simulates `attest` / `countersign` calls, the user's Freighter
+wallet signs them in the browser, and the API submits the signed envelope after checking
+that it is exactly the transaction it prepared. Reads (`verify`, `get`, `version_count`,
+`is_signer`) run as simulations.
+
+A user's wallet can sign only after the admin authorizes it for the organization:
+
+```sh
+stellar contract invoke --id CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH \
+  --source tugma-admin --network testnet -- \
+  add_signer --org org-tugma-demo-psp --signer <user's G... address>
+```
+
+Point the API at a different deployment with `STELLAR_CONTRACT_ID`.
+
 ## Build & test
 
 ```sh
