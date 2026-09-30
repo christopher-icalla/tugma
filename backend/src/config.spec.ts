@@ -15,9 +15,8 @@ describe('config validation', () => {
   });
 
   it.each([
-    ['ADMIN_PASSWORD', '[REDACTED]'],
-    ['DEMO_USER_PASSWORD', '[REDACTED]'],
     ['ADMIN_PASSWORD', 'change-me'],
+    ['DEMO_USER_PASSWORD', 'change-me'],
     ['DEMO_USER_PASSWORD', 'short'],
     ['JWT_SECRET', 'change-me-to-a-long-random-string'],
     ['JWT_SECRET', 'too-short'],

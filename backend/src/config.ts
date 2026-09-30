@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 const bool = z
@@ -5,21 +6,23 @@ const bool = z
   .optional()
   .transform((v) => (v ?? 'true').toLowerCase() !== 'false');
 
-// Placeholders from .env.example and passwords that were once committed to this
-// public repository. Refuse to seed accounts with them.
-const KNOWN_BAD_SECRETS = new Set([
-  'change-me',
-  'change-me-to-a-long-random-string',
-  '[REDACTED]',
-  '[REDACTED]',
-  '[REDACTED]',
+// Placeholders from .env.example. Refuse to seed accounts with them.
+const PLACEHOLDERS = new Set(['change-me', 'change-me-to-a-long-random-string']);
+// SHA-256 of passwords that were once committed to this public repository (kept
+// hashed so the values themselves aren't republished here).
+const LEAKED_SHA256 = new Set([
+  '0223e3a4aef3f0cb763e802f7f0aae6d2a00d8860862224652873d63264bf3fa',
+  'baf3f9790c0382cc9b5a01b66916ec4a2944eccf27dca21bb8d293e6bac1a436',
+  '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9',
 ]);
+const sha256 = (v: string) => createHash('sha256').update(v).digest('hex');
+const isKnownBad = (v: string) => PLACEHOLDERS.has(v) || LEAKED_SHA256.has(sha256(v));
 
 const password = (name: string) =>
   z
     .string()
     .min(12, `${name} must be at least 12 characters`)
-    .refine((v) => !KNOWN_BAD_SECRETS.has(v), `${name} is a placeholder or a leaked password; choose a new one`);
+    .refine((v) => !isKnownBad(v), `${name} is a placeholder or a leaked password; choose a new one`);
 
 export const configSchema = z.object({
   DATABASE_URL: z.string().min(1),
@@ -35,7 +38,7 @@ export const configSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, 'JWT_SECRET must be at least 32 characters')
-    .refine((v) => !KNOWN_BAD_SECRETS.has(v), 'JWT_SECRET is still the placeholder'),
+    .refine((v) => !isKnownBad(v), 'JWT_SECRET is still the placeholder'),
   ADMIN_EMAIL: z.string().email(),
   ADMIN_PASSWORD: password('ADMIN_PASSWORD'),
   DEMO_USER_PASSWORD: password('DEMO_USER_PASSWORD'),
