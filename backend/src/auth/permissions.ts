@@ -17,6 +17,7 @@ export const PERMISSIONS = {
   'package:countersign': ['ADMIN', 'COMPLIANCE', 'RISK'],
   'audit:read': ['ADMIN', 'COMPLIANCE', 'AUDITOR'],
   'controls:run': ['ADMIN', 'PAYMENT_OPS', 'RISK', 'COMPLIANCE'],
+  'signers:manage': ['ADMIN'],
 } satisfies Record<string, Role[]>;
 
 export type Permission = keyof typeof PERMISSIONS;

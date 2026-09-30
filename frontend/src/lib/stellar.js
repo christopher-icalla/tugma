@@ -38,8 +38,8 @@ export async function connectFreighter() {
 }
 
 async function assertNetwork(expectedPassphrase) {
-  const details = await getNetworkDetails();
-  if (details?.networkPassphrase && details.networkPassphrase !== expectedPassphrase) {
+  const details = unwrap(await getNetworkDetails(), "Could not read the Freighter network.");
+  if (details.networkPassphrase !== expectedPassphrase) {
     throw new Error(`Switch Freighter to ${expectedPassphrase.includes("Test") ? "Testnet" : "the TUGMA network"} and try again.`);
   }
 }
@@ -60,11 +60,17 @@ export async function linkWallet() {
  * prepare (API builds + simulates) -> sign (Freighter) -> submit (API sends and
  * records the confirmed result). `action` is "attest" or "countersign".
  */
-export async function signAndSubmit(packageId, action, walletAddress) {
+export async function signAndSubmit(packageId, action, walletAddress, networkPassphrase) {
+  // Check the wallet before asking the API to build anything.
+  const address = await connectFreighter();
+  if (walletAddress && address !== walletAddress) {
+    throw new Error(`Freighter is on ${shortKey(address)}, but your linked wallet is ${shortKey(walletAddress)}. Switch accounts in Freighter.`);
+  }
+  if (networkPassphrase) await assertNetwork(networkPassphrase);
+
   const { data: prep } = await api.post(`/stellar/packages/${packageId}/${action}/prepare`);
-  await assertNetwork(prep.network_passphrase);
   const signed = unwrap(
-    await signTransaction(prep.xdr, { networkPassphrase: prep.network_passphrase, address: walletAddress }),
+    await signTransaction(prep.xdr, { networkPassphrase: prep.network_passphrase, address }),
     "Signing was cancelled.",
   );
   const { data } = await api.post("/stellar/submit", { pending_id: prep.pending_id, signed_xdr: signed.signedTxXdr });
