@@ -20,6 +20,7 @@ import { config } from '../config';
 import { PrismaService } from '../prisma.service';
 import { CurrentUser, Public, PublicUser, publicUserSelect } from './auth.guard';
 import { MailService } from './mail.service';
+import { AuthRateLimit } from '../common/rate-limits';
 
 const MAX_FAILED = 5;
 const LOCKOUT_MINUTES = 15;
@@ -36,6 +37,10 @@ const ResetInput = z.object({ token: z.string(), password: z.string().min(8, 'Pa
 export const hashPassword = (password: string) => bcrypt.hashSync(password, 12);
 export const verifyPassword = (plain: string, hash: string) => bcrypt.compareSync(plain, hash);
 
+// Compared against when the email doesn't exist, so a login takes the same time
+// either way and response timing doesn't reveal which emails have accounts.
+const DUMMY_HASH = hashPassword(randomBytes(16).toString('hex'));
+
 const sign = (payload: object, ttl: number) =>
   jwt.sign(payload, config().JWT_SECRET, { algorithm: 'HS256', expiresIn: ttl });
 
@@ -47,6 +52,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @AuthRateLimit()
   @Post('login')
   @HttpCode(200)
   async login(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -58,7 +64,8 @@ export class AuthController {
       throw new HttpException('Too many failed attempts. Try again in 15 minutes.', 429);
     }
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !verifyPassword(input.password, user.password_hash)) {
+    const valid = verifyPassword(input.password, user?.password_hash ?? DUMMY_HASH);
+    if (!user || !valid) {
       await this.recordFailure(identifier, email);
       throw new UnauthorizedException('Invalid email or password.');
     }
@@ -84,6 +91,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('refresh')
   @HttpCode(200)
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
@@ -103,14 +111,18 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('forgot-password')
   @HttpCode(200)
   async forgotPassword(@Body() body: unknown) {
     const email = parse(ForgotInput, body).email.trim().toLowerCase();
     const now = new Date();
+    const windowStart = new Date(now.getTime() - RESET_WINDOW_SECONDS * 1000);
+    // Only the current window matters; drop older rows so the table can't grow unbounded.
+    await this.prisma.passwordResetRequest.deleteMany({ where: { created_at: { lt: windowStart } } });
     await this.prisma.passwordResetRequest.create({ data: { email, created_at: now } });
     const recent = await this.prisma.passwordResetRequest.count({
-      where: { email, created_at: { gte: new Date(now.getTime() - RESET_WINDOW_SECONDS * 1000) } },
+      where: { email, created_at: { gte: windowStart } },
     });
     if (recent > RESET_MAX_REQUESTS) return GENERIC_RESET;
 
@@ -132,6 +144,7 @@ export class AuthController {
   }
 
   @Public()
+  @AuthRateLimit()
   @Post('reset-password')
   @HttpCode(200)
   async resetPassword(@Body() body: unknown) {
@@ -160,8 +173,10 @@ export class AuthController {
   // ------------------------------------------------------------ helpers
 
   private cookieOptions() {
-    const secure = config().COOKIE_SECURE;
-    return { httpOnly: true, secure, sameSite: secure ? ('none' as const) : ('lax' as const), path: '/' };
+    const { COOKIE_SECURE, COOKIE_SAMESITE } = config();
+    // Browsers reject SameSite=None cookies that aren't Secure.
+    const secure = COOKIE_SECURE || COOKIE_SAMESITE === 'none';
+    return { httpOnly: true, secure, sameSite: COOKIE_SAMESITE, path: '/' };
   }
 
   private setCookie(res: Response, name: string, value: string, maxAgeSeconds: number) {

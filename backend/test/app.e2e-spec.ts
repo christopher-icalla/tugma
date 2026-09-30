@@ -33,7 +33,7 @@ beforeAll(async () => {
     .overrideProvider(SorobanService)
     .useValue(soroban)
     .compile();
-  app = configureApp(moduleRef.createNestApplication<NestExpressApplication>());
+  app = configureApp(moduleRef.createNestApplication<NestExpressApplication>({ bodyParser: false }));
   await app.init();
   await app.get(SeedService).run();
   for (const role of ['compliance', 'risk', 'ops', 'auditor', 'viewer']) await login(role, demo(role));
@@ -296,6 +296,60 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
     const res = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
     expect(res.body.attestations).toHaveLength(1);
     expect(res.body.attestations[0]).toMatchObject({ verification_status: 'VERIFIED', attester_name: 'Maria Reyes' });
+  });
+});
+
+describe('HTTP hardening', () => {
+  const http = () => request(app.getHttpServer());
+
+  it('sends security headers and hides the framework', async () => {
+    const res = await http().get('/api/health');
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['strict-transport-security']).toBeDefined();
+    expect(res.headers['x-frame-options']).toBeDefined();
+    expect(res.headers['x-powered-by']).toBeUndefined();
+  });
+
+  it('blocks state-changing requests from other origins (CSRF)', async () => {
+    const evil = await agents.ops.post(`/api/exceptions/${HERO_EXC}/comment`).set('Origin', 'https://evil.example').send({ text: 'x' });
+    expect(evil.status).toBe(403);
+    const own = await agents.ops.post(`/api/exceptions/${HERO_EXC}/comment`).set('Origin', 'http://localhost:3000').send({ text: 'ok' });
+    expect(own.status).toBe(200);
+  });
+
+  it('ignores HTML form posts (JSON bodies only)', async () => {
+    const res = await http().post('/api/auth/login').type('form').send(ADMIN);
+    expect(res.status).toBe(422);
+  });
+
+  it('rejects oversized bodies', async () => {
+    const res = await agents.ops.post(`/api/exceptions/${HERO_EXC}/comment`).send({ text: 'x'.repeat(200_000) });
+    expect(res.status).toBe(413);
+    expect(res.body).toEqual({ detail: 'Request body too large.' });
+    const bad = await http().post('/api/auth/login').set('Content-Type', 'application/json').send('{"email":');
+    expect(bad.status).toBe(400);
+    expect(bad.body).toEqual({ detail: 'Malformed JSON body.' });
+  });
+
+  it('issues SameSite=Lax httpOnly session cookies by default', async () => {
+    const res = await http().post('/api/auth/login').send(ADMIN);
+    const cookie = (res.headers['set-cookie'] as unknown as string[]).find((c) => c.startsWith('access_token='))!;
+    expect(cookie).toMatch(/HttpOnly/);
+    expect(cookie).toMatch(/SameSite=Lax/);
+  });
+
+  it('rate-limits credential endpoints', async () => {
+    process.env.RATE_LIMIT = 'on';
+    try {
+      const statuses: number[] = [];
+      for (let i = 0; i < 12; i++) {
+        statuses.push((await http().post('/api/auth/forgot-password').send({ email: `probe${i}@example.com` })).status);
+      }
+      expect(statuses.slice(0, 10).every((s) => s === 200)).toBe(true);
+      expect(statuses.slice(10)).toEqual([429, 429]);
+    } finally {
+      process.env.RATE_LIMIT = 'off';
+    }
   });
 });
 
