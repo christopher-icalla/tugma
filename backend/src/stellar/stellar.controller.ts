@@ -4,6 +4,7 @@ import { CurrentUser, Public, PublicUser, RequirePerm } from '../auth/auth.guard
 import { parse } from '../common/util';
 import { PrismaService } from '../prisma.service';
 import { AttestationService } from './attestation.service';
+import { PublicLookupRateLimit, StellarWriteRateLimit } from '../common/rate-limits';
 
 const ChallengeInput = z.object({ address: z.string().trim() });
 const LinkInput = z.object({ challenge: z.string(), signature: z.string().min(1) });
@@ -24,6 +25,7 @@ export class StellarController {
 
   /** Public: anyone holding a package hash can check it against the contract. */
   @Public()
+  @PublicLookupRateLimit()
   @Get('verify/:hash')
   verify(@Param('hash') hash: string) {
     return this.attestations.verifyHash(hash);
@@ -45,12 +47,14 @@ export class StellarController {
     return this.attestations.walletStatus(user);
   }
 
+  @StellarWriteRateLimit()
   @Post('wallet/challenge')
   @HttpCode(200)
   challenge(@CurrentUser() user: PublicUser, @Body() body: unknown) {
     return this.attestations.challenge(user, parse(ChallengeInput, body).address);
   }
 
+  @StellarWriteRateLimit()
   @Post('wallet/link')
   @HttpCode(200)
   link(@CurrentUser() user: PublicUser, @Body() body: unknown) {
@@ -71,6 +75,7 @@ export class StellarController {
 
   // ------------------------------------------------------- attestations
 
+  @StellarWriteRateLimit()
   @Post('packages/:id/attest/prepare')
   @HttpCode(200)
   @RequirePerm('package:attest')
@@ -78,6 +83,7 @@ export class StellarController {
     return this.attestations.prepareAttest(user, id);
   }
 
+  @StellarWriteRateLimit()
   @Post('packages/:id/countersign/prepare')
   @HttpCode(200)
   @RequirePerm('package:countersign')
@@ -85,6 +91,7 @@ export class StellarController {
     return this.attestations.prepareCountersign(user, id);
   }
 
+  @StellarWriteRateLimit()
   @Post('packages/:id/sync')
   @HttpCode(200)
   @RequirePerm('package:attest')
@@ -93,6 +100,7 @@ export class StellarController {
   }
 
   /** Role is re-checked through the pending transaction, which only its preparer can submit. */
+  @StellarWriteRateLimit()
   @Post('submit')
   @HttpCode(200)
   submit(@CurrentUser() user: PublicUser, @Body() body: unknown) {

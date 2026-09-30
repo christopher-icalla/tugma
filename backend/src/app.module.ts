@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { EvidenceController } from './api/evidence.controller';
 import { ExceptionsController } from './api/exceptions.controller';
 import { OverviewController } from './api/overview.controller';
@@ -18,6 +19,14 @@ import { SorobanService } from './stellar/soroban.service';
 import { StellarController } from './stellar/stellar.controller';
 
 @Module({
+  imports: [
+    // Per-IP request budget; routes that are expensive or guessable tighten it with @Throttle.
+    // In-memory store: fine for a single instance, use a shared store if you scale out.
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }],
+      skipIf: () => process.env.RATE_LIMIT === 'off',
+    }),
+  ],
   controllers: [
     HealthController,
     AuthController,
@@ -35,6 +44,7 @@ import { StellarController } from './stellar/stellar.controller';
     SeedService,
     SorobanService,
     AttestationService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DetailExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: PlainJsonInterceptor },

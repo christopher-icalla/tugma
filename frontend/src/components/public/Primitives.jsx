@@ -29,7 +29,7 @@ export function CodePanel({ title = "control_engine.py", lines, testid }) {
           {lines.map((l, i) => (
             <div key={i} className="whitespace-pre">
               <span className="mr-4 select-none text-slate-700">{String(i + 1).padStart(2, "0")}</span>
-              <span dangerouslySetInnerHTML={{ __html: l }} />
+              <span>{l}</span>
             </div>
           ))}
         </code>
@@ -38,12 +38,19 @@ export function CodePanel({ title = "control_engine.py", lines, testid }) {
   );
 }
 
-const SYN = (code) =>
-  code
-    .replace(/(control|expected|actual|if|abs|create_exception|evidence|verify)/g, '<span class="text-sky-400">$1</span>')
-    .replace(/(&quot;[^&]*&quot;|"[^"]*")/g, '<span class="text-emerald-300">$1</span>')
-    .replace(/(HIGH|True|tolerance)/g, '<span class="text-amber-300">$1</span>');
+// Syntax colouring for the static snippets, built as React nodes (no HTML parsing).
+const TOKEN = /("[^"]*")|(control|expected|actual|if|abs|create_exception|evidence|verify)|(HIGH|True|tolerance)/g;
+const TOKEN_CLASS = ["text-emerald-300", "text-sky-400", "text-amber-300"];
 
 export function highlight(code) {
-  return SYN(code.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
+  const out = [];
+  let last = 0;
+  for (const m of code.matchAll(TOKEN)) {
+    if (m.index > last) out.push(code.slice(last, m.index));
+    const group = m.slice(1).findIndex(Boolean);
+    out.push(<span key={m.index} className={TOKEN_CLASS[group]}>{m[0]}</span>);
+    last = m.index + m[0].length;
+  }
+  if (last < code.length) out.push(code.slice(last));
+  return out;
 }

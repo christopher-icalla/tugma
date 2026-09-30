@@ -230,7 +230,7 @@ cp backend/.env.example backend/.env
 ### 2a. Run with Docker Compose
 
 ```sh
-docker compose up --build        # Postgres on :5432, API on :8001
+POSTGRES_PASSWORD=$(openssl rand -hex 16) docker compose up --build   # Postgres + API on 127.0.0.1
 ```
 
 ### 2b. …or run the API directly
@@ -310,12 +310,14 @@ All API settings are environment variables, validated at startup (see [`backend/
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
 | `DATABASE_URL` | yes | — | PostgreSQL connection string |
-| `JWT_SECRET` | yes | — | HS256 signing secret (≥ 16 chars; use 48+ random bytes) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | yes | — | Seeded administrator |
-| `DEMO_USER_PASSWORD` | yes | — | Password for the six demo role users |
+| `JWT_SECRET` | yes | — | HS256 signing secret (≥ 32 chars; use 48+ random bytes) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | yes | — | Seeded administrator (password ≥ 12 chars) |
+| `DEMO_USER_PASSWORD` | yes | — | Password for the six demo role users (≥ 12 chars) |
 | `PORT` | | `8001` | HTTP port |
 | `FRONTEND_URL` | | `http://localhost:3000` | CORS origin(s), comma-separated; also the base of password-reset links |
-| `COOKIE_SECURE` | | `true` | Secure + SameSite=None cookies. Set `false` only for plain-HTTP non-localhost setups |
+| `COOKIE_SECURE` | | `true` | Secure cookies. Set `false` only for plain-HTTP non-localhost setups |
+| `COOKIE_SAMESITE` | | `lax` | `lax` when web app and API share a site (e.g. `tugmaapp.com` + `api.tugmaapp.com`); `none` only for different sites |
+| `TRUST_PROXY` | | `0` | Number of reverse proxies in front of the API. Set `1` behind a load balancer so rate limits see real client IPs |
 | `EMAIL_API_URL` / `EMAIL_API_KEY` / `EMAIL_FROM_NAME` | | — | Password-reset email provider; without it, the link is logged on localhost |
 | `STELLAR_NETWORK` | | `TESTNET` | Label shown in the UI |
 | `STELLAR_RPC_URL` | | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint |
@@ -414,7 +416,11 @@ The API e2e suite boots the full NestJS app against Postgres. It checks the engi
 - **No custodial keys.** Stellar secrets live only in users' wallets. The API prepares transactions and verifies that the signed envelope hash matches what it prepared, so a client can't swap in a different call.
 - **Wallet ownership is proven** with a SEP-53 signed challenge that expires after 5 minutes. A Stellar account can be linked to only one user.
 - **Data stays off-chain.** Only the 32-byte SHA-256 of a package manifest goes on-chain.
-- **Sessions** use httpOnly cookies. Changing a password increments `token_version`, which revokes existing sessions. Five failed logins lock an IP+email pair for 15 minutes.
+- **Sessions** use httpOnly, Secure, `SameSite=Lax` cookies. Changing a password increments `token_version`, which revokes existing sessions. Five failed logins lock an IP+email pair for 15 minutes, and login takes the same time whether or not the email exists.
+- **CSRF**: besides SameSite cookies, the API rejects state-changing requests whose `Origin` isn't the web app, and it accepts JSON bodies only (≤ 100 KB), so HTML forms on other sites can't post to it.
+- **Rate limits** (per IP): 300 requests/min overall; 10/min on login, refresh and password reset; 20/min on wallet linking and transaction building; 30/min on the public hash lookup.
+- **Headers**: helmet sets HSTS, `nosniff`, frame protection and related headers; `X-Powered-By` is removed. Errors never include stack traces.
+- **Secrets**: the API won't start with placeholder or previously leaked passwords, or a JWT secret shorter than 32 characters.
 - **Password reset** returns the same response whether or not the email exists, and its tokens are single-use, expire after one hour, and are stored only as hashes.
 - **The audit trail is append-only**, with no update or delete routes.
 - **Money** is stored as `NUMERIC(14,2)` and compared with decimal arithmetic.
