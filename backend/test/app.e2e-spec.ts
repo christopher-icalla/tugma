@@ -232,6 +232,19 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
     expect((await linkWallet('risk', bob)).status).toBe(200);
   });
 
+  it('shows admins which linked wallets still need add_signer', async () => {
+    expect((await agents.compliance.get('/api/stellar/signers')).status).toBe(403);
+    const { body } = await agents.admin.get('/api/stellar/signers');
+    expect(body.pending_count).toBe(2);
+    expect(body.script_command).toBe(
+      `CONTRACT_ID=${body.contract_id} ORG=${DEMO_ORG_ID} NETWORK=testnet ./contracts/scripts/authorize-signers.sh ` +
+        body.wallets.map((w: { address: string }) => w.address).join(' '),
+    );
+    const maria = body.wallets.find((w: { role: string }) => w.role === 'COMPLIANCE');
+    expect(maria).toMatchObject({ address: alice.publicKey(), is_signer: false });
+    expect(maria.command).toContain(`add_signer --org ${DEMO_ORG_ID} --signer ${alice.publicKey()}`);
+  });
+
   it('refuses to prepare an attestation for a wallet the contract has not authorized', async () => {
     const res = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/attest/prepare`);
     expect(res.status).toBe(400);
@@ -239,6 +252,8 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
     soroban.signers.add(`${DEMO_ORG_ID}|${alice.publicKey()}`);
     soroban.signers.add(`${DEMO_ORG_ID}|${bob.publicKey()}`);
     expect((await agents.compliance.get('/api/stellar/wallet')).body.is_signer).toBe(true);
+    const after = (await agents.admin.get('/api/stellar/signers')).body;
+    expect(after).toMatchObject({ pending_count: 0, script_command: null });
   });
 
   it('attests, rejects swapped envelopes, and blocks double submits', async () => {
