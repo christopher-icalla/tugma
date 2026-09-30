@@ -35,7 +35,7 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
   };
 
   const doSign = (action) => run(action, async () => {
-    const { message } = await signAndSubmit(pkg.id, action, wallet);
+    const { message } = await signAndSubmit(pkg.id, action, wallet, stellarConfig?.network_passphrase);
     toast.success(message);
     await onChange();
   });

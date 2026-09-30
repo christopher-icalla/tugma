@@ -63,6 +63,12 @@ export class StellarController {
     return this.attestations.unlink(user);
   }
 
+  @Get('signers')
+  @RequirePerm('signers:manage')
+  signers(@CurrentUser() user: PublicUser) {
+    return this.attestations.signerOverview(user);
+  }
+
   // ------------------------------------------------------- attestations
 
   @Post('packages/:id/attest/prepare')
