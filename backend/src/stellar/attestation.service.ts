@@ -113,6 +113,41 @@ export class AttestationService {
     };
   }
 
+  /**
+   * Every wallet linked in the organization with its on-chain signer status, plus
+   * the admin CLI command that authorizes it. The API can't sign add_signer
+   * itself: the contract admin key stays with the admin.
+   */
+  async signerOverview(user: PublicUser) {
+    const cfg = config();
+    const users = await this.prisma.user.findMany({
+      where: { organization_id: user.organization_id, stellar_address: { not: null } },
+      orderBy: { name: 'asc' },
+    });
+    const wallets = await Promise.all(
+      users.map(async (u) => ({
+        user_id: u.id, name: u.name, email: u.email, role: u.role,
+        address: u.stellar_address!, linked_at: u.stellar_linked_at,
+        is_signer: await this.soroban.isSigner(user.organization_id, u.stellar_address!),
+      })),
+    );
+    const pending = wallets.filter((w) => !w.is_signer).map((w) => w.address);
+    const invoke = (address: string) =>
+      `stellar contract invoke --id ${cfg.STELLAR_CONTRACT_ID} --source tugma-admin --network ${cfg.STELLAR_NETWORK.toLowerCase()} -- ` +
+      `add_signer --org ${user.organization_id} --signer ${address}`;
+    return {
+      organization_id: user.organization_id,
+      contract_id: cfg.STELLAR_CONTRACT_ID,
+      network: cfg.STELLAR_NETWORK,
+      wallets: wallets.map((w) => ({ ...w, command: w.is_signer ? null : invoke(w.address) })),
+      pending_count: pending.length,
+      script_command: pending.length
+        ? `CONTRACT_ID=${cfg.STELLAR_CONTRACT_ID} ORG=${user.organization_id} NETWORK=${cfg.STELLAR_NETWORK.toLowerCase()} ` +
+          `./contracts/scripts/authorize-signers.sh ${pending.join(' ')}`
+        : null,
+    };
+  }
+
   // -------------------------------------------------- prepare / submit
 
   async prepareAttest(user: PublicUser, packageId: string) {

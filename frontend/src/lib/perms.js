@@ -12,6 +12,7 @@ const PERMS = {
   "package:countersign": ["ADMIN", "COMPLIANCE", "RISK"],
   "audit:read": ["ADMIN", "COMPLIANCE", "AUDITOR"],
   "controls:run": ["ADMIN", "PAYMENT_OPS", "RISK", "COMPLIANCE"],
+  "signers:manage": ["ADMIN"],
 };
 
 export function can(role, action) {
