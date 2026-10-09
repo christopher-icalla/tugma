@@ -24,6 +24,8 @@ const password = (name: string) =>
     .min(12, `${name} must be at least 12 characters`)
     .refine((v) => !isKnownBad(v), `${name} is a placeholder or a leaked password; choose a new one`);
 
+export const TESTNET_PASSPHRASE = 'Test SDF Network ; September 2015';
+
 export const configSchema = z.object({
   DATABASE_URL: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(8001),
@@ -45,9 +47,19 @@ export const configSchema = z.object({
   EMAIL_API_URL: z.string().optional().default(''),
   EMAIL_API_KEY: z.string().optional().default(''),
   EMAIL_FROM_NAME: z.string().optional().default('TUGMA'),
-  STELLAR_NETWORK: z.string().default('TESTNET'),
+  // Testnet only: TUGMA attests synthetic demonstration packages and is not
+  // production financial infrastructure. Refuse to start against any other
+  // network rather than risk a Mainnet transaction. The passphrase decides
+  // which network a signed transaction is valid on, so it is checked too.
+  STELLAR_NETWORK: z
+    .string()
+    .default('TESTNET')
+    .refine((v) => v.toUpperCase() === 'TESTNET', 'STELLAR_NETWORK must be TESTNET; TUGMA does not run on Mainnet'),
   STELLAR_RPC_URL: z.string().url().default('https://soroban-testnet.stellar.org'),
-  STELLAR_NETWORK_PASSPHRASE: z.string().default('Test SDF Network ; September 2015'),
+  STELLAR_NETWORK_PASSPHRASE: z
+    .string()
+    .default(TESTNET_PASSPHRASE)
+    .refine((v) => v === TESTNET_PASSPHRASE, `STELLAR_NETWORK_PASSPHRASE must be the Testnet passphrase ("${TESTNET_PASSPHRASE}")`),
   STELLAR_CONTRACT_ID: z
     .string()
     .regex(/^C[A-Z2-7]{55}$/, 'STELLAR_CONTRACT_ID must be a Soroban contract id (C...)')

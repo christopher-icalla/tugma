@@ -13,6 +13,17 @@ permissions:
   contents: read
 
 jobs:
+  no-ai:
+    name: No-AI policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: No AI/ML libraries or hosted AI APIs
+        run: node scripts/check-no-ai.mjs
+
   backend:
     name: Backend (NestJS + Postgres)
     runs-on: ubuntu-latest

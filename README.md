@@ -30,6 +30,7 @@ Website: [tugmaapp.com](https://tugmaapp.com)
 - [Roles and permissions](#roles-and-permissions)
 - [API reference](#api-reference)
 - [Testing and CI](#testing-and-ci)
+- [Deterministic by design: no AI](#deterministic-by-design-no-ai)
 - [Security model](#security-model)
 - [Disclaimer](#disclaimer)
 - [License](#license)
@@ -319,9 +320,9 @@ All API settings are environment variables, validated at startup (see [`backend/
 | `COOKIE_SAMESITE` | | `lax` | `lax` when web app and API share a site (e.g. `tugmaapp.com` + `api.tugmaapp.com`); `none` only for different sites |
 | `TRUST_PROXY` | | `0` | Number of reverse proxies in front of the API. Set `1` behind a load balancer so rate limits see real client IPs |
 | `EMAIL_API_URL` / `EMAIL_API_KEY` / `EMAIL_FROM_NAME` | | — | Password-reset email provider; without it, the link is logged on localhost |
-| `STELLAR_NETWORK` | | `TESTNET` | Label shown in the UI |
+| `STELLAR_NETWORK` | | `TESTNET` | Must be `TESTNET`; the API refuses to start otherwise |
 | `STELLAR_RPC_URL` | | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint |
-| `STELLAR_NETWORK_PASSPHRASE` | | `Test SDF Network ; September 2015` | Network passphrase |
+| `STELLAR_NETWORK_PASSPHRASE` | | `Test SDF Network ; September 2015` | Must be the Testnet passphrase (enforced) |
 | `STELLAR_CONTRACT_ID` | | TUGMA testnet registry | Attestation contract |
 | `STELLAR_EXPLORER_URL` | | `https://stellar.expert/explorer/testnet` | Explorer links in the UI |
 
@@ -410,6 +411,41 @@ The API e2e suite boots the full NestJS app against Postgres. It checks the engi
 [GitHub Actions](.github/workflows/ci.yml) runs three jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **frontend** (production build with lint warnings as errors), and **contracts** (`cargo test` plus a wasm build uploaded as an artifact).
 
 ---
+
+## Deterministic by design: no AI
+
+TUGMA uses **no AI, LLM or machine-learning model** anywhere in its compliance or
+evidence-attestation workflow. Control evaluation, regulatory mapping, exception
+explanations, exception handling, remediation, evidence processing, package
+hashing, Stellar attestation and verification are all deterministic code.
+
+Why it matters: an integrity proof is only meaningful if the data behind it is
+produced reproducibly. AI-generated summaries, mappings or suggestions could
+hallucinate or be manipulated, and could not be reproduced byte-for-byte, so
+they would undermine the SHA-256 commitment that Stellar anchors.
+
+What each "intelligence" or "explanation" in the product actually is:
+
+| Feature | How it is produced |
+|---|---|
+| Regulatory Intelligence (requirements → controls) | Curated reference data maintained by people (`backend/src/seed/reference-data.ts`) |
+| Control tests | Fixed rules over transaction fields (`backend/src/engine/engine.service.ts`) |
+| Exception explanations | Templated strings of expected value, actual value, variance and tolerance |
+| Remediation | Entered by authorized users; nothing is suggested or generated |
+| Evidence packages | Canonical sorted-key JSON hashed with SHA-256 (`backend/src/api/evidence.controller.ts`) |
+
+**Enforced, not just stated.** [`scripts/check-no-ai.mjs`](scripts/check-no-ai.mjs) runs in CI
+and fails the build if an AI/ML library appears in any dependency tree (direct or
+transitive, npm or Rust) or if source code calls a hosted AI API or reads an AI
+provider's credentials. Run it yourself:
+
+```sh
+node scripts/check-no-ai.mjs
+```
+
+Stellar access is **Testnet-only** as well: the API refuses to start if
+`STELLAR_NETWORK` or `STELLAR_NETWORK_PASSPHRASE` is anything other than Testnet
+(`backend/src/config.ts`).
 
 ## Security model
 

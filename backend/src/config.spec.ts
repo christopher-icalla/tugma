@@ -23,4 +23,14 @@ describe('config validation', () => {
   ])('rejects %s=%s', (key, value) => {
     expect(configSchema.safeParse({ ...base, [key]: value }).success).toBe(false);
   });
+
+  it('is Testnet-only: rejects a Mainnet network name or passphrase', () => {
+    expect(configSchema.safeParse({ ...base, STELLAR_NETWORK: 'PUBLIC' }).success).toBe(false);
+    expect(
+      configSchema.safeParse({ ...base, STELLAR_NETWORK_PASSPHRASE: 'Public Global Stellar Network ; September 2015' }).success,
+    ).toBe(false);
+    expect(configSchema.parse({ ...base, STELLAR_NETWORK: 'testnet' }).STELLAR_NETWORK_PASSPHRASE).toBe(
+      'Test SDF Network ; September 2015',
+    );
+  });
 });

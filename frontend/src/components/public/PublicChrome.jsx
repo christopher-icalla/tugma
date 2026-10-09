@@ -118,7 +118,7 @@ export function PublicFooter() {
             TUGMA provides regulatory intelligence and control-mapping software. It does not provide
             legal advice, certify compliance, or represent that an organization is approved or certified
             by any government authority. TUGMA is not an AML transaction-monitoring replacement, a
-            payment processor, a bank, or a regulator. All data shown is synthetic demonstration data.
+            payment processor, a bank, or a regulator. All data shown is synthetic demonstration data. Regulatory mappings are curated reference data maintained by people, and control results come from deterministic rules: TUGMA uses no AI, LLM or machine-learning model anywhere in its compliance or evidence workflow.
           </p>
           <p className="mt-3">© {new Date().getFullYear()} TUGMA. Compliance You Can Prove.</p>
         </div>
