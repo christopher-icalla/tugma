@@ -61,7 +61,7 @@ export default function RegulatoryIntelligenceApp() {
         TUGMA provides regulatory intelligence and control-mapping software. It does not provide legal
         advice, certify compliance, or represent that an organization is approved or certified by any
         government authority. Regulatory requirements should always be reviewed against the applicable
-        official publication.
+        official publication. Regulatory mappings are curated reference data maintained by people, and control results come from deterministic rules: TUGMA uses no AI, LLM or machine-learning model anywhere in its compliance or evidence workflow.
       </div>
     </div>
   );
