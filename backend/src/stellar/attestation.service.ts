@@ -246,8 +246,13 @@ export class AttestationService {
       const chain = await this.soroban.get(user.organization_id, pkg.id, version);
       if (chain) rows.push(await this.upsertFromChain(pkg, chain));
     }
-    await this.audit.record(user, 'package:sync', 'evidence_package', pkg.id, null, { versions: count });
-    return { message: `Synced ${count} on-chain version(s).`, attestations: rows };
+    const missing = rows.filter((r) => !r.transaction_hash).map((r) => r.version);
+    await this.audit.record(user, 'package:sync', 'evidence_package', pkg.id, null, { versions: count, missing_transaction_hash: missing });
+    const message = missing.length
+      ? `Synced ${count} on-chain version(s). The transaction hash of version(s) ${missing.join(', ')} could not be recovered: ` +
+        'the Stellar RPC no longer holds events for that ledger. The ledger number still locates it.'
+      : `Synced ${count} on-chain version(s).`;
+    return { message, attestations: rows };
   }
 
   /** Public lookup of a package hash against the contract. */
@@ -304,6 +309,11 @@ export class AttestationService {
     const existing = await this.prisma.stellarAttestation.findUnique({
       where: { evidence_package_id_version: { evidence_package_id: pkg.id, version: chain.version } },
     });
+    // Contract state has no transaction hash. Keep the one recorded at submit time;
+    // otherwise recover it from the Attested event in the ledger the contract stored.
+    const transactionHash =
+      existing?.transaction_hash ??
+      (await this.soroban.findAttestTxHash(chain.org, chain.package_id, chain.version, chain.hash, chain.attested_ledger));
     const onchain = {
       attestation_hash: chain.hash, attester_address: chain.attester, ledger: chain.attested_ledger,
       verifier_address: chain.verifier, verified_at: chain.verified_at ? new Date(chain.verified_at) : null,
@@ -312,14 +322,17 @@ export class AttestationService {
       verifier_name: chain.verifier ? verifier?.name ?? existing?.verifier_name ?? 'External signer' : null,
     };
     if (existing) {
-      return this.prisma.stellarAttestation.update({ where: { id: existing.id }, data: onchain });
+      return this.prisma.stellarAttestation.update({
+        where: { id: existing.id },
+        data: { ...onchain, ...(transactionHash ? { transaction_hash: transactionHash } : {}) },
+      });
     }
     return this.prisma.stellarAttestation.create({
       data: {
         ...onchain, organization_id: pkg.organization_id, evidence_package_id: pkg.id, network: config().STELLAR_NETWORK,
         contract_id: this.soroban.contractId, version: chain.version, attester_user_id: attester?.id ?? null,
         attester_name: attester?.name ?? 'External signer',
-        transaction_hash: null, // not stored in contract state; the ledger number locates it
+        transaction_hash: transactionHash, // recovered from the Attested event; null only past RPC retention
         submitted_at: new Date(chain.attested_at),
       },
     });

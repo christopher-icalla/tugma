@@ -15,6 +15,10 @@ export class FakeSoroban extends SorobanService {
   private prepared = new Map<string, { method: string; args: unknown[] }>();
   private ledger = 1000;
   private sequence = 1;
+  /** Transaction hash of each attestation, keyed like `records`: what the RPC's Attested event carries. */
+  private txHashes = new Map<string, string>();
+  /** Set to make event lookups behave as if the ledger is past the RPC's retention window. */
+  eventsExpired = false;
 
   private key = (org: string, pkg: string, v: number) => `${org}|${pkg}|${v}`;
 
@@ -32,6 +36,12 @@ export class FakeSoroban extends SorobanService {
 
   async verify(hash: string) {
     return [...this.records.values()].find((r) => r.hash === hash) ?? null;
+  }
+
+  async findAttestTxHash(org: string, pkg: string, version: number, hash: string, ledger: number) {
+    const rec = this.records.get(this.key(org, pkg, version));
+    if (this.eventsExpired || !rec || rec.hash !== hash || rec.attested_ledger !== ledger) return null;
+    return this.txHashes.get(this.key(org, pkg, version)) ?? null;
   }
 
   async prepare(source: string, method: string, ...args: xdr.ScVal[]): Promise<Transaction> {
@@ -52,7 +62,12 @@ export class FakeSoroban extends SorobanService {
       throw new BadRequestException('FakeSoroban: missing source signature');
     }
     const returnValue = this.apply(tx.source, call.method, call.args, false);
-    return { hash: createHash('sha256').update(tx.toXDR()).digest('hex'), ledger: ++this.ledger, returnValue };
+    const hash = createHash('sha256').update(tx.toXDR()).digest('hex');
+    if (call.method === 'attest') {
+      const [, org, pkg] = call.args as [string, string, string];
+      this.txHashes.set(this.key(org, pkg, Number(returnValue)), hash);
+    }
+    return { hash, ledger: ++this.ledger, returnValue };
   }
 
   private apply(source: string, method: string, args: unknown[], dryRun: boolean): unknown {

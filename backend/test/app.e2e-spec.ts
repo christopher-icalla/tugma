@@ -7,6 +7,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { DEMO_ORG_ID } from '../src/config';
 import { configureApp } from '../src/main';
+import { PrismaService } from '../src/prisma.service';
 import { SeedService } from '../src/seed/seed.service';
 import { SorobanService } from '../src/stellar/soroban.service';
 import { FakeSoroban } from './fake-soroban';
@@ -296,6 +297,36 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
     const res = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
     expect(res.body.attestations).toHaveLength(1);
     expect(res.body.attestations[0]).toMatchObject({ verification_status: 'VERIFIED', attester_name: 'Maria Reyes' });
+  });
+
+  it('keeps the transaction hash on re-sync, and recovers it from the RPC when the local record is gone', async () => {
+    const prisma = app.get(PrismaService);
+    const before = await prisma.stellarAttestation.findFirstOrThrow({ where: { evidence_package_id: pkg.id, version: 1 } });
+    expect(before.transaction_hash).toMatch(/^[0-9a-f]{64}$/);
+
+    // A sync never blanks a hash it already has.
+    const kept = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
+    expect(kept.body.attestations[0].transaction_hash).toBe(before.transaction_hash);
+
+    // Lose the local row (as after a CLI attestation or a missed confirmation): sync recovers the hash.
+    await prisma.stellarAttestation.deleteMany({ where: { evidence_package_id: pkg.id } });
+    const recovered = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
+    expect(recovered.body.attestations[0]).toMatchObject({ version: 1, transaction_hash: before.transaction_hash, ledger: before.ledger });
+    expect(recovered.body.message).toBe('Synced 1 on-chain version(s).');
+
+    // Past the RPC's event retention the hash can't be read back; sync says so instead of hiding it.
+    await prisma.stellarAttestation.deleteMany({ where: { evidence_package_id: pkg.id } });
+    soroban.eventsExpired = true;
+    try {
+      const expired = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
+      expect(expired.body.attestations[0].transaction_hash).toBeNull();
+      expect(expired.body.message).toMatch(/version\(s\) 1 could not be recovered/);
+    } finally {
+      soroban.eventsExpired = false;
+    }
+    await agents.compliance.post(`/api/stellar/packages/${pkg.id}/sync`);
+    const restored = await prisma.stellarAttestation.findFirstOrThrow({ where: { evidence_package_id: pkg.id, version: 1 } });
+    expect(restored.transaction_hash).toBe(before.transaction_hash);
   });
 });
 

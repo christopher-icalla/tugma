@@ -103,6 +103,29 @@ export class SorobanService {
     return Number((await this.read('version_count', str(org), str(packageId))) ?? 0);
   }
 
+  /**
+   * The hash of the transaction that attested `version` of a package. Contract
+   * state keeps only the ledger, so this reads the `Attested` event the contract
+   * published in that ledger (topics: name, org, package_id; data: version, hash,
+   * attester) and returns its transaction hash. Null when the RPC no longer holds
+   * events for that ledger (outside its retention window) or none matches.
+   */
+  async findAttestTxHash(org: string, packageId: string, version: number, hashHex: string, ledger: number): Promise<string | null> {
+    let events: rpc.Api.GetEventsResponse;
+    try {
+      events = await this.server.getEvents({
+        startLedger: ledger,
+        endLedger: ledger + 1,
+        filters: [{ type: 'contract', contractIds: [this.contractId], topics: [['*', str(org).toXDR('base64'), str(packageId).toXDR('base64')]] }],
+        limit: 100,
+      });
+    } catch (e) {
+      this.logger.warn(`getEvents for ledger ${ledger} failed: ${(e as Error).message}`);
+      return null;
+    }
+    return attestTxHashFromEvents(events.events, version, hashHex);
+  }
+
   // --------------------------------------------------------------- writes
 
   /**
@@ -191,6 +214,32 @@ export class SorobanService {
       throw new BadGatewayException('The Stellar network could not be reached. Try again shortly.');
     }
   }
+}
+
+/**
+ * Picks the `Attested` event for `version` and `hashHex` out of the contract's
+ * events and returns its transaction hash. Countersigned events share the same
+ * topics but carry no hash, so matching on the hash selects only attestations.
+ */
+export function attestTxHashFromEvents(
+  events: { txHash: string; value: xdr.ScVal; inSuccessfulContractCall?: boolean }[],
+  version: number,
+  hashHex: string,
+): string | null {
+  for (const ev of events) {
+    if (ev.inSuccessfulContractCall === false) continue;
+    let data: unknown;
+    try {
+      data = scValToNative(ev.value);
+    } catch {
+      continue;
+    }
+    if (!data || typeof data !== 'object') continue;
+    const d = data as Record<string, unknown>;
+    if (!(d.hash instanceof Uint8Array)) continue;
+    if (Number(d.version) === version && Buffer.from(d.hash).toString('hex') === hashHex.toLowerCase()) return ev.txHash;
+  }
+  return null;
 }
 
 function contractErrorCode(message: string): number | null {
