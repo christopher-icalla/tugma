@@ -15,13 +15,16 @@ datasource db {
 // ------------------------------------------------------------------ tenancy
 
 model Organization {
-  id          String   @id
-  name        String
-  country     String
-  industry    String
-  environment String
-  description String
-  created_at  DateTime
+  id           String   @id
+  name         String
+  country      String
+  industry     String
+  environment  String
+  description  String
+  created_at   DateTime
+  // Opaque identifier sent to the attestation contract in place of `id`, so the
+  // public ledger never names the organization. Random; the mapping lives only here.
+  chain_org_id String   @unique
 
   @@map("organizations")
 }

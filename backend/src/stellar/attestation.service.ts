@@ -105,11 +105,13 @@ export class AttestationService {
   }
 
   async walletStatus(user: PublicUser) {
-    if (!user.stellar_address) return { address: null, is_signer: false, organization_id: user.organization_id };
+    const onchainOrgId = await this.chainOrgId(user);
+    if (!user.stellar_address) return { address: null, is_signer: false, organization_id: user.organization_id, onchain_org_id: onchainOrgId };
     return {
       address: user.stellar_address,
-      is_signer: await this.soroban.isSigner(user.organization_id, user.stellar_address),
+      is_signer: await this.soroban.isSigner(onchainOrgId, user.stellar_address),
       organization_id: user.organization_id,
+      onchain_org_id: onchainOrgId,
     };
   }
 
@@ -120,6 +122,7 @@ export class AttestationService {
    */
   async signerOverview(user: PublicUser) {
     const cfg = config();
+    const onchainOrgId = await this.chainOrgId(user);
     const users = await this.prisma.user.findMany({
       where: { organization_id: user.organization_id, stellar_address: { not: null } },
       orderBy: { name: 'asc' },
@@ -128,21 +131,22 @@ export class AttestationService {
       users.map(async (u) => ({
         user_id: u.id, name: u.name, email: u.email, role: u.role,
         address: u.stellar_address!, linked_at: u.stellar_linked_at,
-        is_signer: await this.soroban.isSigner(user.organization_id, u.stellar_address!),
+        is_signer: await this.soroban.isSigner(onchainOrgId, u.stellar_address!),
       })),
     );
     const pending = wallets.filter((w) => !w.is_signer).map((w) => w.address);
     const invoke = (address: string) =>
       `stellar contract invoke --id ${cfg.STELLAR_CONTRACT_ID} --source tugma-admin --network ${cfg.STELLAR_NETWORK.toLowerCase()} -- ` +
-      `add_signer --org ${user.organization_id} --signer ${address}`;
+      `add_signer --org ${onchainOrgId} --signer ${address}`;
     return {
       organization_id: user.organization_id,
+      onchain_org_id: onchainOrgId,
       contract_id: cfg.STELLAR_CONTRACT_ID,
       network: cfg.STELLAR_NETWORK,
       wallets: wallets.map((w) => ({ ...w, command: w.is_signer ? null : invoke(w.address) })),
       pending_count: pending.length,
       script_command: pending.length
-        ? `CONTRACT_ID=${cfg.STELLAR_CONTRACT_ID} ORG=${user.organization_id} NETWORK=${cfg.STELLAR_NETWORK.toLowerCase()} ` +
+        ? `CONTRACT_ID=${cfg.STELLAR_CONTRACT_ID} ORG=${onchainOrgId} NETWORK=${cfg.STELLAR_NETWORK.toLowerCase()} ` +
           `./contracts/scripts/authorize-signers.sh ${pending.join(' ')}`
         : null,
     };
@@ -156,7 +160,7 @@ export class AttestationService {
     const existing = await this.prisma.stellarAttestation.findUnique({ where: { attestation_hash: pkg.canonical_hash } });
     if (existing) throw new ConflictException(`This package hash is already attested on-chain (version ${existing.version}).`);
 
-    const params = { org: user.organization_id, package_id: pkg.id, period_start: pkg.period_start, period_end: pkg.period_end, hash: pkg.canonical_hash };
+    const params = { org: await this.chainOrgId(user), package_id: pkg.id, period_start: pkg.period_start, period_end: pkg.period_end, hash: pkg.canonical_hash };
     const tx = await this.soroban.prepare(
       wallet, 'attest',
       addr(wallet), str(params.org), str(params.package_id), str(params.period_start), str(params.period_end), bytes32(params.hash),
@@ -176,7 +180,7 @@ export class AttestationService {
       throw new ForbiddenException('Independent verification required: the countersigner must differ from the attester (segregation of duties).');
     }
 
-    const params = { org: user.organization_id, package_id: pkg.id, version: latest.version };
+    const params = { org: await this.chainOrgId(user), package_id: pkg.id, version: latest.version };
     const tx = await this.soroban.prepare(wallet, 'countersign', addr(wallet), str(params.org), str(params.package_id), u32(params.version));
     return this.savePending(user, pkg.id, 'countersign', Buffer.from(tx.hash()).toString('hex'), params, tx.toXDR());
   }
@@ -240,10 +244,11 @@ export class AttestationService {
    */
   async sync(user: PublicUser, packageId: string) {
     const pkg = await this.package(user, packageId);
-    const count = await this.soroban.versionCount(user.organization_id, pkg.id);
+    const onchainOrgId = await this.chainOrgId(user);
+    const count = await this.soroban.versionCount(onchainOrgId, pkg.id);
     const rows: StellarAttestation[] = [];
     for (let version = 1; version <= count; version++) {
-      const chain = await this.soroban.get(user.organization_id, pkg.id, version);
+      const chain = await this.soroban.get(onchainOrgId, pkg.id, version);
       if (chain) rows.push(await this.upsertFromChain(pkg, chain));
     }
     const missing = rows.filter((r) => !r.transaction_hash).map((r) => r.version);
@@ -273,6 +278,16 @@ export class AttestationService {
   }
 
   // ---------------------------------------------------------- helpers
+
+  /**
+   * The opaque identifier the contract knows this organization by. Every contract
+   * call uses it instead of the readable organization id (see docs/onchain-footprint.md).
+   */
+  private async chainOrgId(user: PublicUser): Promise<string> {
+    const org = await this.prisma.organization.findUnique({ where: { id: user.organization_id }, select: { chain_org_id: true } });
+    if (!org) throw new NotFoundException('Organization not found.');
+    return org.chain_org_id;
+  }
 
   private requireWallet(user: PublicUser): string {
     if (!user.stellar_address) throw new BadRequestException('Link a Stellar wallet (Settings → Stellar Wallet) first.');

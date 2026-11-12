@@ -3,6 +3,7 @@ import { hashPassword, verifyPassword } from '../auth/auth.controller';
 import { config, DEMO_ORG_ID } from '../config';
 import { EngineService } from '../engine/engine.service';
 import { PrismaService } from '../prisma.service';
+import { newChainOrgId } from '../stellar/chain-org';
 import { generateTransactions, TOTAL } from './dataset';
 import {
   CONTROL_TESTS, CONTROLS, DEMO_USERS, organization, REGULATORY_REQUIREMENTS, regulatorySources, vendors,
@@ -40,7 +41,8 @@ export class SeedService {
   async seedStatic() {
     const now = new Date();
     const org = organization(now);
-    await this.prisma.organization.upsert({ where: { id: org.id }, update: org, create: org });
+    // chain_org_id is set once, on create, and never rotated: on-chain records are keyed by it.
+    await this.prisma.organization.upsert({ where: { id: org.id }, update: org, create: { ...org, chain_org_id: newChainOrgId() } });
     for (const s of regulatorySources(now)) {
       await this.prisma.regulatorySource.upsert({ where: { id: s.id }, update: s, create: s });
     }

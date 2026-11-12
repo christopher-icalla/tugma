@@ -84,7 +84,7 @@ export default function StellarWallet() {
           </button>
           {!wallet.is_signer && (
             <p className="w-full font-mono text-[11px] leading-relaxed text-amber-300/80">
-              The contract admin must authorize this account for {wallet.organization_id} before it can attest or countersign.
+              The contract admin must authorize this account for your organization (on-chain id {wallet.onchain_org_id}) before it can attest or countersign.
               Admins see the ready-to-run command under Settings → Stellar Signers.
             </p>
           )}

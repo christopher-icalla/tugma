@@ -38,6 +38,12 @@ export class FakeSoroban extends SorobanService {
     return [...this.records.values()].find((r) => r.hash === hash) ?? null;
   }
 
+  /** The decoded contract-call arguments of a transaction this stand-in prepared. */
+  preparedArgs(xdrB64: string, passphrase: string): unknown[] {
+    const tx = TransactionBuilder.fromXDR(xdrB64, passphrase) as Transaction;
+    return this.prepared.get(Buffer.from(tx.hash()).toString('hex'))?.args ?? [];
+  }
+
   async findAttestTxHash(org: string, pkg: string, version: number, hash: string, ledger: number) {
     const rec = this.records.get(this.key(org, pkg, version));
     if (this.eventsExpired || !rec || rec.hash !== hash || rec.attested_ledger !== ledger) return null;

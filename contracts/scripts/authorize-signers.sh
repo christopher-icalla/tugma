@@ -2,20 +2,27 @@
 # Authorize Stellar accounts to attest/countersign for a TUGMA organization.
 # Run by the contract admin, whose key is in the Stellar CLI identity store.
 #
-#   ./contracts/scripts/authorize-signers.sh G... [G... ...]
+#   ORG=org_<32 hex> ./contracts/scripts/authorize-signers.sh G... [G... ...]
 #
-# Overrides: CONTRACT_ID, ORG, SOURCE (admin identity), NETWORK.
-# Admins can copy the exact command, pre-filled with every pending wallet, from
-# Settings → Stellar Signers in the app.
+# ORG is the organization's opaque on-chain id, never its readable id. Admins
+# can copy the exact command, with ORG and every pending wallet filled in, from
+# Settings → Stellar Signers in the app. Overrides: CONTRACT_ID, SOURCE (admin
+# identity), NETWORK.
 set -euo pipefail
 
 CONTRACT_ID="${CONTRACT_ID:-CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH}"
-ORG="${ORG:-org-tugma-demo-psp}"
+ORG="${ORG:-}"
 SOURCE="${SOURCE:-tugma-admin}"
 NETWORK="${NETWORK:-testnet}"
 
 if [ "$#" -eq 0 ]; then
-  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+  exit 1
+fi
+
+if ! [[ "$ORG" =~ ^org_[0-9a-f]{32}$ ]]; then
+  echo "Set ORG to the organization's opaque on-chain id (org_ followed by 32 hex characters)," >&2
+  echo "shown under Settings → Stellar Signers. The readable organization id is never sent on-chain." >&2
   exit 1
 fi
 

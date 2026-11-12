@@ -101,7 +101,7 @@ export default function StellarSigners() {
                 </div>
                 <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all rounded bg-slate-950/70 p-3 font-mono text-[11px] leading-relaxed text-slate-200">{data.script_command}</pre>
                 <p className="mt-2 font-mono text-[10px] text-slate-500">
-                  Run from the repository root. Contract {shortKey(data.contract_id)} · {data.network} · org {data.organization_id}
+                  Run from the repository root. Contract {shortKey(data.contract_id)} · {data.network} · on-chain org id {data.onchain_org_id}
                 </p>
               </div>
             ) : (

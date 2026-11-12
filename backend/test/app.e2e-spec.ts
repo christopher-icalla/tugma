@@ -204,6 +204,7 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
   const alice = Keypair.random(); // compliance officer's wallet
   const bob = Keypair.random(); // risk officer's wallet
   let pkg: { id: string; canonical_hash: string };
+  let chainOrg: string; // the opaque id the contract knows the demo organization by
 
   async function linkWallet(who: string, kp: Keypair) {
     const ch = await agents[who].post('/api/stellar/wallet/challenge').send({ address: kp.publicKey() });
@@ -236,25 +237,41 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
   it('shows admins which linked wallets still need add_signer', async () => {
     expect((await agents.compliance.get('/api/stellar/signers')).status).toBe(403);
     const { body } = await agents.admin.get('/api/stellar/signers');
+    chainOrg = body.onchain_org_id;
+    expect(chainOrg).toMatch(/^org_[0-9a-f]{32}$/);
+    expect(chainOrg).not.toContain(DEMO_ORG_ID);
     expect(body.pending_count).toBe(2);
     expect(body.script_command).toBe(
-      `CONTRACT_ID=${body.contract_id} ORG=${DEMO_ORG_ID} NETWORK=testnet ./contracts/scripts/authorize-signers.sh ` +
+      `CONTRACT_ID=${body.contract_id} ORG=${chainOrg} NETWORK=testnet ./contracts/scripts/authorize-signers.sh ` +
         body.wallets.map((w: { address: string }) => w.address).join(' '),
     );
     const maria = body.wallets.find((w: { role: string }) => w.role === 'COMPLIANCE');
     expect(maria).toMatchObject({ address: alice.publicKey(), is_signer: false });
-    expect(maria.command).toContain(`add_signer --org ${DEMO_ORG_ID} --signer ${alice.publicKey()}`);
+    expect(maria.command).toContain(`add_signer --org ${chainOrg} --signer ${alice.publicKey()}`);
+    expect(maria.command).not.toContain(DEMO_ORG_ID);
   });
 
   it('refuses to prepare an attestation for a wallet the contract has not authorized', async () => {
     const res = await agents.compliance.post(`/api/stellar/packages/${pkg.id}/attest/prepare`);
     expect(res.status).toBe(400);
     expect(res.body.detail).toMatch(/not an authorized signer/);
+    // A signer authorized under the readable id is not a signer: the contract only knows the opaque id.
     soroban.signers.add(`${DEMO_ORG_ID}|${alice.publicKey()}`);
-    soroban.signers.add(`${DEMO_ORG_ID}|${bob.publicKey()}`);
+    expect((await agents.compliance.get('/api/stellar/wallet')).body.is_signer).toBe(false);
+    soroban.signers.add(`${chainOrg}|${alice.publicKey()}`);
+    soroban.signers.add(`${chainOrg}|${bob.publicKey()}`);
     expect((await agents.compliance.get('/api/stellar/wallet')).body.is_signer).toBe(true);
     const after = (await agents.admin.get('/api/stellar/signers')).body;
     expect(after).toMatchObject({ pending_count: 0, script_command: null });
+  });
+
+  it('sends the contract the opaque organization id, never the readable one', async () => {
+    const prep = (await agents.compliance.post(`/api/stellar/packages/${pkg.id}/attest/prepare`)).body;
+    // attest(attester, org, package_id, period_start, period_end, hash): the arguments as the contract receives them.
+    const args = soroban.preparedArgs(prep.xdr, prep.network_passphrase);
+    expect(args[1]).toBe(chainOrg);
+    expect(JSON.stringify(args.slice(1, 5))).not.toContain(DEMO_ORG_ID);
+    expect(Buffer.from(prep.xdr, 'base64').toString('latin1')).not.toContain(DEMO_ORG_ID);
   });
 
   it('attests, rejects swapped envelopes, and blocks double submits', async () => {
@@ -284,7 +301,8 @@ describe('Stellar attestation (Freighter flow against the contract stand-in)', (
   it('verifies publicly and reflects status on the package list', async () => {
     const v = await request(app.getHttpServer()).get(`/api/stellar/verify/${pkg.canonical_hash}`);
     expect(v.body).toMatchObject({ found: true, package: { id: pkg.id } });
-    expect(v.body.onchain).toMatchObject({ attester: alice.publicKey(), verifier: bob.publicKey(), version: 1 });
+    expect(v.body.onchain).toMatchObject({ org: chainOrg, attester: alice.publicKey(), verifier: bob.publicKey(), version: 1 });
+    expect(JSON.stringify(v.body.onchain)).not.toContain(DEMO_ORG_ID);
     expect((await request(app.getHttpServer()).get(`/api/stellar/verify/${'0'.repeat(64)}`)).body.found).toBe(false);
     expect((await request(app.getHttpServer()).get('/api/stellar/verify/not-a-hash')).status).toBe(400);
 
