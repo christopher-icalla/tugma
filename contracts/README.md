@@ -23,7 +23,7 @@ Events: `Attested`, `Countersigned`, `SignerChanged` (topics: org, package_id).
 |---|---|
 | Contract ID | `CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH` (CLI alias `tugma-attestation`) |
 | Admin | `GADNTW5DPTTUOJWRQ3A6PTPMB6QCOHIT74KWWBBHNLH4T6EFZJFN5UFW` (key `tugma-admin`) |
-| Signers for `org-tugma-demo-psp` | `GCP64OOU5TINJDB35RYRE6X5J7E2DGNIAZ7XUP5QG5FGXE4LSWN4DBN7` (`tugma-compliance`), `GBRJFTHVW7D6SQPAIHSCXSFRNZ7GUGKSSNBX6TADYAD3KKXGNV3XLRP7` (`tugma-risk`) |
+| Signers under the legacy readable org id `org-tugma-demo-psp` (before opaque ids; re-authorize them with the opaque id) | `GCP64OOU5TINJDB35RYRE6X5J7E2DGNIAZ7XUP5QG5FGXE4LSWN4DBN7` (`tugma-compliance`), `GBRJFTHVW7D6SQPAIHSCXSFRNZ7GUGKSSNBX6TADYAD3KKXGNV3XLRP7` (`tugma-risk`) |
 | Explorer | https://lab.stellar.org/r/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH |
 
 Secret keys live in the Stellar CLI's local identity store (`~/.config/stellar/identity/`), not in this repo.
@@ -42,8 +42,10 @@ A user's wallet can sign only after the admin authorizes it for the organization
 ```sh
 stellar contract invoke --id CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH \
   --source tugma-admin --network testnet -- \
-  add_signer --org org-tugma-demo-psp --signer <user's G... address>
+  add_signer --org <opaque on-chain org id> --signer <user's G... address>
 ```
+
+The `org` argument is the organization's opaque on-chain id (`org_` + 32 hex), shown under **Settings → Stellar Signers**; TUGMA never sends its readable organization id. Every field and event the contract makes public is listed in [`docs/onchain-footprint.md`](../docs/onchain-footprint.md).
 
 Point the API at a different deployment with `STELLAR_CONTRACT_ID`.
 
@@ -75,10 +77,10 @@ stellar contract deploy \
 C=<contract id>
 
 stellar contract invoke --id $C --source tugma-admin --network testnet -- \
-  add_signer --org org-tugma-demo-psp --signer <G... address>
+  add_signer --org <opaque on-chain org id> --signer <G... address>
 
 stellar contract invoke --id $C --source <attester key> --network testnet -- \
-  attest --attester <attester G...> --org org-tugma-demo-psp \
+  attest --attester <attester G...> --org <opaque on-chain org id> \
   --package_id pkg-2026-01-01-2026-03-31 \
   --period_start 2026-01-01 --period_end 2026-03-31 \
   --hash <64-char hex canonical_hash>

@@ -277,7 +277,7 @@ The API defaults to the TUGMA registry already deployed on testnet:
 |---|---|
 | Contract ID | `CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH` |
 | Network | Stellar Testnet |
-| Organization key | `org-tugma-demo-psp` |
+| Organization key | Opaque on-chain id (`org_` + 32 hex), shown under **Settings → Stellar Signers**. The readable organization id is never sent on-chain. |
 | Explorer | [stellar.expert](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [Stellar Lab](https://lab.stellar.org/r/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) |
 
 To attest from the app:
@@ -290,15 +290,17 @@ To attest from the app:
    ```sh
    stellar contract invoke --id CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH \
      --source tugma-admin --network testnet -- \
-     add_signer --org org-tugma-demo-psp --signer <G... address>
+     add_signer --org <opaque on-chain org id> --signer <G... address>
    ```
 
-   Settings shows **Authorized signer on-chain** once this is done.
+   **Settings → Stellar Signers** shows this command with the id and every pending wallet filled in. Settings shows **Authorized signer on-chain** once this is done.
 5. **Attest.** On **Reports**, generate a package for a period, then click **Attest on Stellar** and approve in Freighter.
 6. **Countersign.** Sign in as a *different* authorized user (for example, RISK attests and COMPLIANCE countersigns) and click **Countersign**.
 7. **Verify.** Anyone can paste the package hash on the public **/stellar** page.
 
-If a package is regenerated after new evidence arrives, its hash changes. Reports then shows the attestation as stale and offers **Re-attest new hash**, which appends version *n+1*; earlier versions remain on-chain. **Sync from chain** rebuilds local records from contract state, which covers attestations made with the CLI.
+If a package is regenerated after new evidence arrives, its hash changes. Reports then shows the attestation as stale and offers **Re-attest new hash**, which appends version *n+1*; earlier versions remain on-chain. **Sync from chain** rebuilds local records from contract state, which covers attestations made with the CLI. It keeps each version's Stellar transaction hash, and recovers a missing one from the contract's `attested` event through the Soroban RPC.
+
+Exactly what is public on Stellar, and what stays off-chain, is listed field by field in [`docs/onchain-footprint.md`](docs/onchain-footprint.md).
 
 Contract build, test and deploy instructions are in [`contracts/README.md`](contracts/README.md). To use your own deployment, set `STELLAR_CONTRACT_ID`.
 
