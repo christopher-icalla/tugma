@@ -70,6 +70,16 @@ For a signed export it also checks the SEP-53 signature and reports whether the 
 
 The hash written in the file is never trusted on its own, and the contract id always comes from the verifier's settings (TUGMA's Testnet contract `CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH` by default), never from the file. If the file names a different contract, the verifier says so.
 
+## Check one document without the others
+
+In **Evidence**, click **Export** on a record to download it as `tugma-evidence-<id>.json` (`GET /api/evidence/:id/export`). The file holds exactly the input the record's `content_hash` was computed from. Give it to a reviewer together with the package file, which lists only ids and hashes, never other documents' contents:
+
+```bash
+node bin/tugma-verify.js evidence tugma-evidence-evd-….json --package tugma-pkg-….json
+```
+
+The verifier recomputes the record's hash, checks that its `id:content_hash` line is in the package manifest, and verifies the package on Stellar. Results: `VALID`, `TAMPERED` (record changed), `NOT_IN_PACKAGE`, `PACKAGE_NOT_VALID` or `INVALID_FILE`.
+
 ## Demonstration: a valid package passes, a modified one fails
 
 **Offline, reproducible** (also runs in CI):

@@ -1,10 +1,30 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FileCheck2, Package } from "lucide-react";
+import { Download, FileCheck2, Package } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useApi, PageHeader, Card, shortDate } from "@/components/app/shared";
 import { LoadingState, ErrorState, EmptyState } from "@/components/States";
 import { StatusBadge } from "@/components/StatusBadge";
+
+/** Download one evidence record (GET /evidence/:id/export) for a per-document check. */
+async function exportEvidence(ev) {
+  try {
+    const res = await api.get(`/evidence/${encodeURIComponent(ev.id)}/export`, { responseType: "text" });
+    const url = URL.createObjectURL(new Blob([res.data], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tugma-evidence-${ev.id}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    let detail = "Export failed";
+    try { detail = JSON.parse(e.response?.data ?? "").detail || detail; } catch { /* keep the generic message */ }
+    toast.error(detail);
+  }
+}
 
 const ASSOC = [
   ["exception_id", "Exception"], ["control_id", "Control"], ["transaction_id", "Transaction"],
@@ -51,7 +71,7 @@ export default function Evidence() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-slate-800 text-left font-mono text-[11px] uppercase tracking-wider text-slate-500">
-                <th className="px-5 py-3">Name</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Associated</th><th className="px-5 py-3">Captured</th><th className="px-5 py-3">SHA-256</th>
+                <th className="px-5 py-3">Name</th><th className="px-5 py-3">Type</th><th className="px-5 py-3">Associated</th><th className="px-5 py-3">Captured</th><th className="px-5 py-3">SHA-256</th><th className="px-5 py-3"><span className="sr-only">Export</span></th>
               </tr></thead>
               <tbody className="divide-y divide-slate-800">
                 {evidence.map((ev) => (
@@ -67,6 +87,13 @@ export default function Evidence() {
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-slate-500">{shortDate(ev.captured_at)} · {ev.captured_by}</td>
                     <td className="px-5 py-3 font-mono text-[10px] text-emerald-300/70">{ev.content_hash?.slice(0, 16)}…</td>
+                    <td className="px-5 py-3">
+                      <button type="button" onClick={() => exportEvidence(ev)} data-testid={`evidence-export-${ev.id}`}
+                        title="Download this record with its hash input, to check it against a package's manifest line without sharing other documents"
+                        className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-slate-400 hover:text-emerald-300">
+                        <Download className="h-3 w-3" /> Export
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

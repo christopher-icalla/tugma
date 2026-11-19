@@ -9,6 +9,7 @@ import { AuditService } from '../common/audit.service';
 import { canonicalJson, isoDay, parse, sha256, shortId } from '../common/util';
 import { PrismaService } from '../prisma.service';
 import { AttestationService } from '../stellar/attestation.service';
+import { buildEvidenceExport, evidenceFileName, EvidenceNotExportableError, evidenceHashInput } from './evidence-export';
 import { buildPackageExport, exportFileName, PackageNotExportableError } from './package-export';
 
 const optional = z.string().nullish();
@@ -63,9 +64,9 @@ export class EvidenceController {
       if (!exc) throw new BadRequestException('exception_id does not belong to this organization.');
     }
     const now = new Date();
-    const content_hash = sha256(canonicalJson({
-      name: input.name, type: input.evidence_type, content: input.content ?? '', source: input.source_system ?? '',
-    }));
+    const content_hash = sha256(canonicalJson(evidenceHashInput({
+      name: input.name, evidence_type: input.evidence_type, content: input.content ?? null, source_system: input.source_system ?? null,
+    })));
     const evidence = await this.prisma.evidence.create({
       data: {
         id: shortId('evd', 5), organization_id: user.organization_id, evidence_type: input.evidence_type,
@@ -78,6 +79,35 @@ export class EvidenceController {
     });
     await this.audit.record(user, 'evidence:upload', 'evidence', evidence.id, null, { name: input.name, hash: content_hash });
     return { message: 'Evidence recorded.', evidence };
+  }
+
+  /**
+   * Download one evidence record with the exact input its content hash was
+   * computed from, so it can be checked against a package's manifest line
+   * without sharing any other document.
+   */
+  @Get('evidence/:id/export')
+  async exportEvidence(
+    @Param('id') id: string,
+    @CurrentUser() user: PublicUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [ev, org] = await Promise.all([
+      this.prisma.evidence.findFirst({ where: { id, organization_id: user.organization_id } }),
+      this.prisma.organization.findUnique({ where: { id: user.organization_id }, select: { chain_org_id: true } }),
+    ]);
+    if (!ev || !org) throw new NotFoundException('Evidence not found.');
+    let out;
+    try {
+      out = buildEvidenceExport(ev, org.chain_org_id);
+    } catch (e) {
+      if (e instanceof EvidenceNotExportableError) throw new UnprocessableEntityException(e.message);
+      throw e;
+    }
+    await this.audit.record(user, 'evidence:export', 'evidence', id, null, { content_hash: ev.content_hash });
+    res.setHeader('Content-Disposition', `attachment; filename="${evidenceFileName(ev.id)}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return out;
   }
 
   @Get('evidence/completeness')

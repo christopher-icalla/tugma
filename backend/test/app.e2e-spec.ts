@@ -229,6 +229,30 @@ describe('evidence packages', () => {
     expect((await agents.auditor.get('/api/evidence-packages/pkg-1999-01-01-1999-01-31/export')).status).toBe(404);
     expect((await request(app.getHttpServer()).get('/api/evidence-packages/pkg-2026-01-01-2026-01-31/export')).status).toBe(401);
   });
+
+  it('exports one evidence record that checks against its line in a package manifest', async () => {
+    const created = await agents.ops.post('/api/evidence').send({
+      name: 'Per-document proof sample', evidence_type: 'DOCUMENT', content: 'Bank statement line 42', source_system: 'core-banking',
+    });
+    expect(created.status).toBe(200);
+    const ev = created.body.evidence;
+
+    const res = await agents.auditor.get(`/api/evidence/${ev.id}/export`);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toBe(`attachment; filename="tugma-evidence-${ev.id}.json"`);
+    const item = res.body;
+    expect(item).toMatchObject({ format: 'tugma.evidence-item', evidence_id: ev.id, content_hash: ev.content_hash });
+    expect(item.hash_input).toEqual({ name: 'Per-document proof sample', type: 'DOCUMENT', content: 'Bank statement line 42', source: 'core-banking' });
+    expect(createHash('sha256').update(item.canonical_hash_input).digest('hex')).toBe(ev.content_hash);
+
+    // A package for the day the evidence was recorded lists exactly that line.
+    const day = new Date(ev.created_at).toISOString().slice(0, 10);
+    const gen = await agents.compliance.post('/api/evidence-packages/generate').send({ period_start: day, period_end: day });
+    const pkgExport = (await agents.auditor.get(`/api/evidence-packages/${gen.body.package.id}/export`)).body;
+    expect(pkgExport.manifest.evidence).toContain(item.manifest_entry);
+
+    expect((await agents.auditor.get('/api/evidence/evd-does-not-exist/export')).status).toBe(404);
+  });
 });
 
 describe('Stellar attestation (Freighter flow against the contract stand-in)', () => {
