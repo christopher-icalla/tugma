@@ -57,6 +57,43 @@ export async function linkWallet() {
 }
 
 /**
+ * The text a wallet signs for a signed export. Must stay identical to
+ * exportMessage() in verifier/src/signature.js, which checks it.
+ */
+export function exportMessage({ package_id, org, canonical_hash, network_passphrase, exported_at }) {
+  return [
+    "TUGMA evidence package export",
+    `package: ${package_id}`,
+    `org: ${org}`,
+    `sha256: ${canonical_hash}`,
+    `network: ${network_passphrase}`,
+    `exported_at: ${exported_at}`,
+  ].join("\n");
+}
+
+/**
+ * Adds the linked wallet's SEP-53 signature to a package export, proving which
+ * account exported this exact package. The manifest and its hash don't change.
+ */
+export async function signExport(bundle, linkedAddress) {
+  const address = await connectFreighter();
+  if (address !== linkedAddress) {
+    throw new Error("Freighter is on a different account than the wallet linked to your TUGMA user. Switch accounts and try again.");
+  }
+  const message = exportMessage({
+    package_id: bundle.package_id,
+    org: bundle.org,
+    canonical_hash: bundle.canonical_hash,
+    network_passphrase: bundle.network.passphrase,
+    exported_at: new Date().toISOString(),
+  });
+  const res = unwrap(await signMessage(message, { address }), "Signing was cancelled.");
+  if (!res.signedMessage) throw new Error("Signing was cancelled.");
+  const signature = typeof res.signedMessage === "string" ? res.signedMessage : res.signedMessage.toString("base64");
+  return { ...bundle, export_signature: { scheme: "sep53", signer: address, message, signature } };
+}
+
+/**
  * prepare (API builds + simulates) -> sign (Freighter) -> submit (API sends and
  * records the confirmed result). `action` is "attest" or "countersign".
  */

@@ -1,5 +1,6 @@
 import { canonicalJson } from "./canonical.js";
 import { sha256Hex } from "./hash.js";
+import { checkExportSignature } from "./signature.js";
 
 export const EXPORT_FORMAT = "tugma.evidence-package";
 export const EXPORT_FORMAT_VERSION = 1;
@@ -21,10 +22,11 @@ export const LIMITATION =
  *   TAMPERED      the contents no longer match the hash they were exported with
  *   NOT_ATTESTED  no attestation exists on-chain for the recomputed hash
  *   MISMATCH      an attestation exists, but for a different package or period
+ *   BAD_SIGNATURE the file carries an export signature that does not check out
  *   INVALID_FILE  not a TUGMA evidence-package export
  *
  * @param {object} bundle  parsed export file
- * @param {{ contractId: string, verify(hash: string): Promise<object|null>, versionCount(org: string, id: string): Promise<number> }} chain
+ * @param {object} chain  createChainReader() result, or a stand-in with the same methods
  */
 export async function verifyPackage(bundle, chain) {
   const checks = [];
@@ -105,5 +107,14 @@ export async function verifyPackage(bundle, chain) {
   }
   if (!attestation.verifier) warnings.push("This attestation has not been countersigned.");
 
-  return result("VALID", { ...base, attestation, latest_version: latest });
+  // 4. Optional: the exporting wallet's SEP-53 signature over this exact package.
+  const signature = await checkExportSignature(bundle, recomputed, chain);
+  if (signature) {
+    check("Export signature", signature.ok, signature.ok
+      ? `signed by ${signature.signer}${signature.authorized_signer ? ", an authorized signer for this organization" : " (not an authorized signer on-chain)"}`
+      : signature.problems.join("; "));
+    if (!signature.ok) return result("BAD_SIGNATURE", { ...base, attestation, latest_version: latest, signature });
+  }
+
+  return result("VALID", { ...base, attestation, latest_version: latest, signature });
 }

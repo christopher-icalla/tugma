@@ -8,6 +8,8 @@ Before this feature, a reviewer could only look up a hash that TUGMA supplied. N
 
 In TUGMA, open **Reports** and click **Download canonical package** on a finalized package. Any signed-in user of the organization can do this, including read-only roles such as Auditor. Each download is recorded in the audit log.
 
+Users with a linked Stellar wallet can also click **Download signed copy**. Freighter then signs a [SEP-53](https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0053.md) message naming the package id, organization, SHA-256, network and time, and the signature is added to the file as `export_signature`. It proves which account exported this exact package; it does not change the manifest or its hash.
+
 The file (`tugma-pkg-<start>-<end>.json`) is produced by `GET /api/evidence-packages/:id/export` and contains:
 
 | Field | Meaning |
@@ -55,7 +57,7 @@ Open the page and drop the file on it. The file is read and hashed inside the br
 4. **On-chain attestation**: the contract's `verify(hash)` returns a record for the **recomputed** hash.
 5. **Package, organization and period**: that record is for this package id, organization and period.
 
-It also reports whether the attestation was countersigned and whether a newer version of the package has since been attested.
+For a signed export it also checks the SEP-53 signature and reports whether the signer is currently an authorized signer for the organization on the contract. It also reports whether the attestation was countersigned and whether a newer version of the package has since been attested.
 
 | Result | Meaning |
 |---|---|
@@ -63,6 +65,7 @@ It also reports whether the attestation was countersigned and whether a newer ve
 | `TAMPERED` | The contents were changed after export (checks 2 or 3 fail) |
 | `NOT_ATTESTED` | No attestation exists for the recomputed hash, for example when the contents *and* the hash in the file were both edited |
 | `MISMATCH` | An attestation exists for this hash, but for a different package, organization or period |
+| `BAD_SIGNATURE` | The file carries an export signature that is not a valid signature by its signer, or that names a different package, organization or hash |
 | `INVALID_FILE` | Not a TUGMA package export |
 
 The hash written in the file is never trusted on its own, and the contract id always comes from the verifier's settings (TUGMA's Testnet contract `CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH` by default), never from the file. If the file names a different contract, the verifier says so.

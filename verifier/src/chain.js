@@ -47,6 +47,20 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
     async versionCount(org, packageId) {
       return Number((await read("version_count", str(org), str(packageId))) ?? 0);
     },
+    /** Whether `address` is currently an authorized signer for `org` on the contract. */
+    async isSigner(org, address) {
+      return Boolean(await read("is_signer", str(org), new sdk.Address(address).toScVal()));
+    },
+    /** SEP-53: was `message` signed by the Stellar account `address`? (signature in base64) */
+    verifySignedMessage(address, message, signatureB64) {
+      try {
+        if (!sdk.StrKey.isValidEd25519PublicKey(address)) return false;
+        const sig = base64ToBytes(signatureB64);
+        return sig.length === 64 && sdk.Keypair.fromPublicKey(address).verifyMessage(message, sig);
+      } catch {
+        return false;
+      }
+    },
   };
 }
 
@@ -64,6 +78,11 @@ export async function withRetry(call, attempts = 3, delayMs = 500) {
       await new Promise((r) => setTimeout(r, delayMs * i));
     }
   }
+}
+
+function base64ToBytes(b64) {
+  const bin = globalThis.atob(String(b64));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
 
 const toHex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");

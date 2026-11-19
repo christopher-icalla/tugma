@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import * as sdk from "@stellar/stellar-sdk";
 import { canonicalJson } from "../src/canonical.js";
 import { sha256Hex } from "../src/hash.js";
 
@@ -57,6 +58,17 @@ export function fakeChain(contractId = CONTRACT) {
     },
     async versionCount(org, packageId) {
       return records.filter((r) => r.org === org && r.package_id === packageId).length;
+    },
+    signers: new Set(),
+    async isSigner(org, address) {
+      return this.signers.has(`${org}|${address}`);
+    },
+    verifySignedMessage(address, message, signatureB64) {
+      try {
+        return sdk.Keypair.fromPublicKey(address).verifyMessage(message, Buffer.from(signatureB64, "base64"));
+      } catch {
+        return false;
+      }
     },
   };
 }

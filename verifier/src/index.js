@@ -9,6 +9,7 @@ import { TESTNET } from "./network.js";
 export { canonicalJson } from "./canonical.js";
 export { sha256Hex } from "./hash.js";
 export { createChainReader, normalizeAttestation, withRetry } from "./chain.js";
+export { exportMessage, parseExportMessage, checkExportSignature } from "./signature.js";
 export { verifyPackage, LIMITATION, EXPORT_FORMAT, EXPORT_FORMAT_VERSION } from "./verify.js";
 export { TESTNET };
 

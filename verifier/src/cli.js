@@ -10,16 +10,17 @@ attestation contract through Soroban RPC. It never calls TUGMA's API.
   --rpc <url>        Soroban RPC endpoint (default: https://soroban-testnet.stellar.org)
   --contract <C...>  attestation contract id (default: TUGMA's Testnet contract)
 
-Exit codes: 0 valid, 1 not valid (tampered, not attested or mismatch),
+Exit codes: 0 valid, 1 not valid (tampered, not attested, mismatch or bad signature),
 2 bad input, 3 the network could not be reached.`;
 
-export const EXIT = { VALID: 0, TAMPERED: 1, NOT_ATTESTED: 1, MISMATCH: 1, INVALID_FILE: 2, USAGE: 2, NETWORK: 3 };
+export const EXIT = { VALID: 0, TAMPERED: 1, NOT_ATTESTED: 1, MISMATCH: 1, BAD_SIGNATURE: 1, INVALID_FILE: 2, USAGE: 2, NETWORK: 3 };
 
 const SUMMARY = {
   VALID: "VALID: this package is the one attested on Stellar.",
   TAMPERED: "NOT VALID (TAMPERED): the package was changed after it was exported.",
   NOT_ATTESTED: "NOT VALID (NOT ATTESTED): no attestation on Stellar matches this package.",
   MISMATCH: "NOT VALID (MISMATCH): the matching attestation is for a different package, organization or period.",
+  BAD_SIGNATURE: "NOT VALID (BAD SIGNATURE): the file's export signature does not match this package or signer.",
   INVALID_FILE: "NOT VALID: this is not a TUGMA evidence-package export.",
 };
 
@@ -53,6 +54,7 @@ export function formatResult(r) {
       `  Organization ${a.org}`,
       `  Attested     ${a.attested_at} in ledger ${a.attested_ledger} by ${a.attester}`,
       `  Countersign  ${a.verifier ? `${a.verified_at} by ${a.verifier}` : "none"}`,
+      `  Exported by  ${r.signature ? `${r.signature.signer} at ${r.signature.exported_at}` : "unsigned file"}`,
     );
   }
   lines.push("", `  Contract     ${r.contract_id} (Stellar Testnet)`);

@@ -8,6 +8,7 @@ const HEADLINE = {
   TAMPERED: ["NOT VALID: TAMPERED", "The package was changed after it was exported."],
   NOT_ATTESTED: ["NOT VALID: NOT ATTESTED", "No attestation on Stellar matches this package."],
   MISMATCH: ["NOT VALID: MISMATCH", "The matching attestation is for a different package, organization or period."],
+  BAD_SIGNATURE: ["NOT VALID: BAD SIGNATURE", "The file's export signature does not match this package or signer."],
   INVALID_FILE: ["NOT VALID", "This is not a TUGMA evidence-package export."],
 };
 
@@ -41,6 +42,7 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
       ["Attested", `${a.attested_at}, ledger ${a.attested_ledger}`],
       ["Attester", a.attester],
       ["Countersigned", a.verifier ? `${a.verified_at} by ${a.verifier}` : "No"],
+      ["Exported by", result.signature ? `${result.signature.signer} at ${result.signature.exported_at}` : "Unsigned file"],
     );
   }
   details.push(["Contract", result.contract_id]);
