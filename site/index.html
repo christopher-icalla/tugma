@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TUGMA — Compliance You Can Prove</title>
+  <meta name="description" content="TUGMA continuously tests payment operations against regulatory controls and produces evidence packages anyone can verify on Stellar.">
+  <link rel="stylesheet" href="./site.css">
+</head>
+<body>
+  <header class="nav">
+    <a class="brand" href="./"><span class="logo">T</span> TUGMA</a>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#verify">Verify</a>
+      <a href="#stellar">Stellar</a>
+      <a href="https://github.com/christopher-icalla/tugma">GitHub</a>
+      <a class="btn" href="https://tugmaapp.com">Open the app</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Continuous payment control intelligence</p>
+        <h1>Compliance You Can Prove.</h1>
+        <p class="lead">TUGMA continuously tests payment operations against regulatory and organizational controls, connects every exception to remediation and evidence, and produces evidence packages whose integrity anyone can verify on Stellar, without trusting TUGMA.</p>
+        <div class="cta">
+          <a class="btn primary" href="https://tugmaapp.com">Open tugmaapp.com</a>
+          <a class="btn" href="./verifier/web/">Verify a package</a>
+        </div>
+        <p class="fine">For Philippine regulated payment operators · Stellar Testnet</p>
+      </div>
+      <a class="shot" href="https://tugmaapp.com"><img src="./images/site-home.png" alt="TUGMA website"></a>
+    </section>
+
+    <section class="links">
+      <a href="https://tugmaapp.com"><b>Web app</b><span>tugmaapp.com</span></a>
+      <a href="./verifier/web/"><b>Browser verifier</b><span>Check a package against Stellar</span></a>
+      <a href="https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH"><b>Attestation contract</b><span class="mono">CC734HZ…3ZTH on Stellar Expert</span></a>
+      <a href="https://github.com/christopher-icalla/tugma"><b>Source code</b><span>MIT on GitHub</span></a>
+    </section>
+
+    <section id="how">
+      <p class="eyebrow">How it works</p>
+      <h2>From regulation to proof, in one traceable chain.</h2>
+      <ol class="steps">
+        <li><b>Regulation → control</b><span>BSP and AMLC requirements map to deterministic, testable controls.</span></li>
+        <li><b>Automated tests</b><span>Every transaction is tested; each failure records expected, actual, variance and tolerance.</span></li>
+        <li><b>Exception workflow</b><span>Review, remediation and evidence, verified by someone other than the resolver.</span></li>
+        <li><b>Evidence package</b><span>A canonical manifest for the period, hashed with SHA-256. Same inputs, same hash.</span></li>
+        <li><b>Stellar attestation</b><span>One wallet attests the hash on a Soroban contract; a different wallet countersigns.</span></li>
+        <li><b>Independent verification</b><span>Anyone re-hashes the package and checks it on Stellar with open-source code.</span></li>
+      </ol>
+      <div class="grid2">
+        <figure><img src="./images/site-how-it-works.png" alt="How TUGMA works"><figcaption>How it works</figcaption></figure>
+        <figure><img src="./images/site-controls.png" alt="Control library"><figcaption>Control library</figcaption></figure>
+      </div>
+    </section>
+
+    <section id="verify" class="split">
+      <div>
+        <p class="eyebrow">Verify it yourself</p>
+        <h2>No need to trust TUGMA.</h2>
+        <p>Download a finalized package from the app, then check it with the open-source verifier. It rebuilds the canonical form, recalculates the SHA-256 and reads the attestation directly from the Stellar Testnet contract through Soroban RPC. The file never leaves your browser.</p>
+        <ul class="checks">
+          <li><b>VALID</b> the file is byte-for-byte the attested package</li>
+          <li><b>TAMPERED</b> the contents changed after export</li>
+          <li><b>NOT ATTESTED</b> no attestation matches the recomputed hash</li>
+        </ul>
+        <pre><code>cd verifier &amp;&amp; npm ci
+node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json</code></pre>
+        <div class="cta">
+          <a class="btn primary" href="./verifier/web/">Open the browser verifier</a>
+          <a class="btn" href="https://github.com/christopher-icalla/tugma/blob/main/docs/verify-a-package.md">Read the guide</a>
+        </div>
+        <p class="fine">A valid result establishes package integrity, not that the contents are true or that the organization is compliant.</p>
+      </div>
+      <figure><img src="./images/verifier-tampered.png" alt="Verifier catching a tampered package"><figcaption>A package edited after export fails, checked live against Testnet</figcaption></figure>
+    </section>
+
+    <section id="stellar">
+      <p class="eyebrow">Stellar integration</p>
+      <h2>An integrity layer, not a data store.</h2>
+      <div class="cards">
+        <div><b>Soroban contract</b><span>Attestation registry with signer allow-list, append-only versions and a countersignature by a different wallet.</span></div>
+        <div><b>Wallet-signed</b><span>Users sign with Freighter. The API never holds a secret key and checks every signed envelope.</span></div>
+        <div><b>Data stays off-chain</b><span>Only a SHA-256 and an opaque organization id are public. <a href="https://github.com/christopher-icalla/tugma/blob/main/docs/onchain-footprint.md">What goes on-chain</a></span></div>
+        <div><b>Soroban RPC</b><span>Reads, simulations and events through <code>@stellar/stellar-sdk</code>; SEP-53 signed messages for wallet linking and signed exports.</span></div>
+      </div>
+      <figure class="wide"><a href="https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH"><img src="./images/stellar-expert-contract.png" alt="Contract on Stellar Expert"></a><figcaption>The attestation contract on Stellar Expert (Testnet)</figcaption></figure>
+    </section>
+  </main>
+
+  <footer>
+    <p><b>TUGMA</b> · Compliance You Can Prove · <a href="https://tugmaapp.com">tugmaapp.com</a> · <a href="https://github.com/christopher-icalla/tugma">GitHub</a> · MIT © 2026 Christopher Icalla</p>
+    <p class="fine">TUGMA does not provide legal advice or certify compliance. All data is synthetic demonstration data. The Stellar integration runs on Testnet and does not imply mainnet production readiness.</p>
+  </footer>
+</body>
+</html>
