@@ -1,26 +1,73 @@
-# TUGMA — Compliance You Can Prove
+<div align="center">
+
+# TUGMA
+
+### Compliance You Can Prove
+
+**Continuous payment control intelligence for regulated payment operators, with evidence packages anyone can verify on Stellar.**
 
 [![CI](https://github.com/christopher-icalla/tugma/actions/workflows/ci.yml/badge.svg)](https://github.com/christopher-icalla/tugma/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-7D00FF)](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH)
+[![Live app](https://img.shields.io/badge/Live-tugmaapp.com-0ea5e9)](https://tugmaapp.com)
+[![Stellar Testnet](https://img.shields.io/badge/Stellar-Testnet-7D00FF?logo=stellar)](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH)
+[![Soroban](https://img.shields.io/badge/Soroban-Rust%20contract-orange)](contracts/)
+[![No AI](https://img.shields.io/badge/AI%2FML-none%2C%20enforced%20in%20CI-success)](#deterministic-by-design-no-ai)
 
-**Continuous Payment Control Intelligence for regulated payment operators.**
+[**Live app**](https://tugmaapp.com) · [**Contract on Stellar Expert**](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [**Verify a package**](docs/verify-a-package.md) · [**What goes on-chain**](docs/onchain-footprint.md)
 
-TUGMA continuously tests actual payment operations against defined regulatory and organizational controls, identifies exceptions, connects them to remediation and evidence, and produces evidence packages whose integrity anyone can verify on Stellar.
+<a href="https://tugmaapp.com"><img src="docs/images/site-home.png" alt="TUGMA website: Compliance You Can Prove" width="900"></a>
+
+</div>
+
+TUGMA continuously tests actual payment operations against regulatory and organizational controls, identifies exceptions, connects them to remediation and evidence, and produces evidence packages whose integrity anyone can verify on Stellar, with an open-source verifier that never has to trust TUGMA.
 
 > **Detect. Prevent. Prove.**
 
-Website: [tugmaapp.com](https://tugmaapp.com)
+---
+
+## Live deployments
+
+| | |
+|---|---|
+| **Web app** | [tugmaapp.com](https://tugmaapp.com) |
+| **Attestation contract** (Soroban, Stellar Testnet) | [`CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH`](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) |
+| Explore the contract | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [Stellar Lab](https://lab.stellar.org/r/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) |
+| Network | Stellar Testnet · passphrase `Test SDF Network ; September 2015` |
+| Soroban RPC | `https://soroban-testnet.stellar.org` |
+| **Browser verifier** (GitHub Pages) | [christopher-icalla.github.io/tugma/web](https://christopher-icalla.github.io/tugma/web/), deployed by [`verifier-pages.yml`](.github/workflows/verifier-pages.yml) once Pages is enabled for the repository |
+| Command-line verifier | [`verifier/`](verifier/): `node bin/tugma-verify.js <package.json>` |
+| Contract source | [`contracts/contracts/attestation/src/lib.rs`](contracts/contracts/attestation/src/lib.rs) |
+
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><a href="https://tugmaapp.com/how-it-works"><img src="docs/images/site-how-it-works.png" alt="How TUGMA works"></a><br><sub><b>How it works</b>: regulation to proof, one traceable chain</sub></td>
+    <td width="50%"><a href="https://tugmaapp.com/controls"><img src="docs/images/site-controls.png" alt="Control library"></a><br><sub><b>Control library</b>: deterministic, testable checks mapped to BSP and AMLC requirements</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="https://tugmaapp.com/stellar"><img src="docs/images/site-stellar.png" alt="Stellar integrity layer"></a><br><sub><b>Stellar</b>: an integrity layer, not a data store; public hash lookup</sub></td>
+    <td width="50%"><img src="docs/images/verifier-tampered.png" alt="Standalone verifier catching a tampered package"><br><sub><b>Standalone verifier</b>: a package edited after export fails, checked live against Testnet</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><a href="https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH"><img src="docs/images/stellar-expert-contract.png" alt="Attestation contract on Stellar Expert"></a><br><sub><b>The attestation contract on Stellar Expert</b>: deployment, signer authorization, attestation and countersignature on Testnet</sub></td>
+  </tr>
+</table>
 
 ---
 
 ## Contents
 
+- [Live deployments](#live-deployments)
+- [Screenshots](#screenshots)
 - [The problem](#the-problem)
 - [How TUGMA works](#how-tugma-works)
 - [Features](#features)
 - [Architecture](#architecture)
 - [On-chain attestation flow](#on-chain-attestation-flow)
+- [Verify a package yourself](#verify-a-package-yourself)
 - [Tech stack](#tech-stack)
 - [Repository layout](#repository-layout)
 - [Getting started](#getting-started)
@@ -95,6 +142,10 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 - **Evidence packages.** A canonical, sorted-key JSON manifest for a period is hashed with SHA-256. Regenerating the same period reproduces the same hash.
 - **On-chain attestation (Soroban).** Users sign with their own Freighter wallet: one authorized signer attests the package hash and a different one countersigns. Versions are append-only, and anyone can look up a hash on the public `/stellar` page.
 - **Independent verification.** A finalized package downloads in canonical form, and the open-source verifier (`verifier/`, command line and browser) rebuilds its canonical JSON, recalculates the SHA-256 and reads the attestation straight from the Testnet contract through Soroban RPC, without calling TUGMA's API. A match proves package integrity, not that the contents are true. See [docs/verify-a-package.md](docs/verify-a-package.md).
+- **Signed exports.** A user's linked Freighter wallet can sign the exported file (SEP-53), so a verifier also sees which account exported this exact package.
+- **Version history.** The verifier lists every attested version of a package and marks the one the file matches.
+- **Per-document proofs.** One evidence record can be checked against its line in a package, without sharing any other document.
+- **Verify links and QR codes.** The public `/stellar` page links to the verifier, and every finalized package carries a QR code with its id and SHA-256 for printed audit reports.
 - **Append-only audit trail.** Every write is logged, and no route exists to edit or delete audit entries.
 - **Role-based access control.** Seven roles, enforced on the server and mirrored in the UI.
 
@@ -169,6 +220,44 @@ Segregation of duties is enforced **twice**. The API rejects a countersignature 
 
 ---
 
+## Verify a package yourself
+
+Anyone holding a package file can check it against Stellar without TUGMA. Download it from **Reports → Download canonical package**, then:
+
+```sh
+cd verifier && npm ci
+node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json
+```
+
+Example output for an attested, countersigned package (abridged):
+
+```text
+VALID: this package is the one attested on Stellar.
+
+  [ok]   Export format: expected tugma.evidence-package v1 with a manifest
+  [ok]   Canonical form: canonical_manifest matches the manifest
+  [ok]   Recomputed SHA-256: matches the exported hash b51ee955ffc8…
+  [ok]   On-chain attestation: version 1 attested in ledger …
+  [ok]   Package, organization and period: pkg-2026-01-01-2026-03-31 for org_…
+
+  Versions on-chain (newest first):
+    => v1  b51ee955ffc869d3…  2026-…  countersigned  (this file)
+```
+
+| Result | Meaning |
+|---|---|
+| `VALID` | The file is byte-for-byte the package attested on Stellar |
+| `TAMPERED` | The contents changed after export |
+| `NOT_ATTESTED` | No attestation exists for the recomputed hash |
+| `MISMATCH` | The attestation is for a different package, organization or period |
+| `BAD_SIGNATURE` | A signed export whose SEP-53 signature does not check out |
+
+The same checks run in the browser ([`verifier/web`](verifier/web), `npm run web`), and `npm run demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
+
+> A `VALID` result establishes **package integrity**, not that the contents are true or that the organization is compliant.
+
+---
+
 ## Tech stack
 
 | Layer | Technology |
@@ -202,14 +291,14 @@ Segregation of duties is enforced **twice**. The API rejects a countersignature 
 ├── frontend/                    React app (public site + authenticated control center)
 │   └── src/
 │       ├── lib/stellar.js       Freighter helpers (link wallet, sign & submit)
-│       ├── components/app/      AttestationPanel, StellarWallet, shared UI
+│       ├── components/app/      AttestationPanel, StellarWallet, package download and QR, shared UI
 │       └── pages/               public/, auth/, app/
 ├── contracts/                   Soroban attestation registry (Rust)
 ├── verifier/                    standalone package verifier: CLI, browser page, shared test vectors
-├── docs/                        on-chain footprint, verifying a package
+├── docs/                        on-chain footprint, verifying a package, README images
 ├── memory/PRD.md                product requirements
 ├── docker-compose.yml           Postgres + API
-└── .github/workflows/ci.yml     backend, frontend and contract pipelines
+└── .github/workflows/          ci.yml (all pipelines), verifier-pages.yml (hosted verifier)
 ```
 
 ---
@@ -383,8 +472,10 @@ Every route is under `/api`. Errors are returned as `{ "detail": "..." }`. Route
 | GET | `/exceptions` · `/exceptions/:code` · `/exceptions/:code/chain` | Facets, explanation, evidence chain |
 | POST | `/exceptions/:code/assign` · `/transition` · `/remediation` · `/comment` | Workflow |
 | GET / POST | `/evidence` · `/evidence/completeness` | Content-hashed evidence |
+| GET | `/evidence/:id/export` | One evidence record with its exact hash input, for a per-document check |
 | POST | `/evidence-packages/generate` | `{ name?, period_start, period_end }` → canonical SHA-256 |
 | GET | `/evidence-packages` · `/evidence-packages/:id` · `/reports` | Includes `stellar` status and `attestations` versions |
+| GET | `/evidence-packages/:id/export` | Finalized package in canonical form, for the standalone verifier |
 | GET | `/audit-logs` | `entity_id`, `limit ≤ 500` |
 | GET | `/stellar/config` 🌐 | Network, contract, explorer |
 | GET | `/stellar/verify/:hash` 🌐 | On-chain lookup of a package hash |
