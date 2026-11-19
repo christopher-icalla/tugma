@@ -12,9 +12,13 @@
     ".": "./src/index.js"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "verify": "node bin/tugma-verify.js"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.2.0"
+  },
+  "bin": {
+    "tugma-verify": "./bin/tugma-verify.js"
   }
 }
