@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Keypair, TransactionBuilder } from '@stellar/stellar-sdk';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import request from 'supertest';
@@ -197,6 +198,36 @@ describe('evidence packages', () => {
     expect(a.body.package.canonical_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(b.body.package.canonical_hash).toBe(a.body.package.canonical_hash);
     expect(a.body.package.stellar).toMatchObject({ verification_status: 'NOT_SUBMITTED', transaction_hash: null, network: 'TESTNET' });
+  });
+
+  it('exports a finalized package in canonical form that re-hashes to its own hash', async () => {
+    const gen = await agents.compliance.post('/api/evidence-packages/generate').send({ period_start: '2026-01-01', period_end: '2026-01-31' });
+    const pkg = gen.body.package;
+
+    // Read-only roles can export too: an auditor is who most needs a copy.
+    const res = await agents.auditor.get(`/api/evidence-packages/${pkg.id}/export`);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toBe(`attachment; filename="tugma-${pkg.id}.json"`);
+    expect(res.headers['cache-control']).toBe('no-store');
+
+    const out = res.body;
+    expect(out).toMatchObject({
+      format: 'tugma.evidence-package', format_version: 1, package_id: pkg.id, canonical_hash: pkg.canonical_hash,
+      period_start: '2026-01-01', period_end: '2026-01-31', hash_algorithm: 'sha256',
+      network: { name: 'TESTNET', contract_id: soroban.contractId },
+    });
+    expect(out.org).toMatch(/^org_[0-9a-f]{32}$/);
+    expect(JSON.stringify(out)).not.toContain(DEMO_ORG_ID);
+    expect(createHash('sha256').update(out.canonical_manifest).digest('hex')).toBe(pkg.canonical_hash);
+    expect(JSON.parse(out.canonical_manifest)).toEqual(out.manifest);
+
+    const audit = await app.get(PrismaService).auditLog.findFirst({ where: { action: 'package:export', entity_id: pkg.id } });
+    expect(audit).not.toBeNull();
+  });
+
+  it('refuses to export a package that does not exist, or without a session', async () => {
+    expect((await agents.auditor.get('/api/evidence-packages/pkg-1999-01-01-1999-01-31/export')).status).toBe(404);
+    expect((await request(app.getHttpServer()).get('/api/evidence-packages/pkg-2026-01-01-2026-01-31/export')).status).toBe(401);
   });
 });
 

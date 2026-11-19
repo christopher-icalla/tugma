@@ -1,11 +1,15 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param, Post, Res, UnprocessableEntityException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { Response } from 'express';
 import { z } from 'zod';
 import { CurrentUser, PublicUser, RequirePerm } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
 import { canonicalJson, isoDay, parse, sha256, shortId } from '../common/util';
 import { PrismaService } from '../prisma.service';
 import { AttestationService } from '../stellar/attestation.service';
+import { buildPackageExport, exportFileName, PackageNotExportableError } from './package-export';
 
 const optional = z.string().nullish();
 const EvidenceInput = z.object({
@@ -175,6 +179,38 @@ export class EvidenceController {
     const pkg = await this.prisma.evidencePackage.findFirst({ where: { id, organization_id: user.organization_id } });
     if (!pkg) throw new NotFoundException('Package not found.');
     return { package: (await this.attestations.decorate([pkg]))[0] };
+  }
+
+  /**
+   * Download a finalized package in canonical form, with the hash, opaque
+   * on-chain organization id and Testnet contract a verifier needs to check it
+   * without calling this API.
+   */
+  @Get('evidence-packages/:id/export')
+  async exportPackage(
+    @Param('id') id: string,
+    @CurrentUser() user: PublicUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const [pkg, org] = await Promise.all([
+      this.prisma.evidencePackage.findFirst({ where: { id, organization_id: user.organization_id } }),
+      this.prisma.organization.findUnique({ where: { id: user.organization_id }, select: { chain_org_id: true } }),
+    ]);
+    if (!pkg || !org) throw new NotFoundException('Package not found.');
+    const cfg = this.attestations.publicConfig();
+    let out;
+    try {
+      out = buildPackageExport(pkg, org.chain_org_id, {
+        name: cfg.network, passphrase: cfg.network_passphrase, contract_id: cfg.contract_id,
+      });
+    } catch (e) {
+      if (e instanceof PackageNotExportableError) throw new UnprocessableEntityException(e.message);
+      throw e;
+    }
+    await this.audit.record(user, 'package:export', 'evidence_package', id, null, { canonical_hash: pkg.canonical_hash });
+    res.setHeader('Content-Disposition', `attachment; filename="${exportFileName(pkg.id)}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return out;
   }
 
   @Get('reports')
