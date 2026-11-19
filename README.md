@@ -94,6 +94,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 - **Evidence Center.** Every evidence record carries a SHA-256 content hash, and completeness is scored per exception and per control.
 - **Evidence packages.** A canonical, sorted-key JSON manifest for a period is hashed with SHA-256. Regenerating the same period reproduces the same hash.
 - **On-chain attestation (Soroban).** Users sign with their own Freighter wallet: one authorized signer attests the package hash and a different one countersigns. Versions are append-only, and anyone can look up a hash on the public `/stellar` page.
+- **Independent verification.** A finalized package downloads in canonical form, and the open-source verifier (`verifier/`, command line and browser) rebuilds its canonical JSON, recalculates the SHA-256 and reads the attestation straight from the Testnet contract through Soroban RPC, without calling TUGMA's API. A match proves package integrity, not that the contents are true. See [docs/verify-a-package.md](docs/verify-a-package.md).
 - **Append-only audit trail.** Every write is logged, and no route exists to edit or delete audit entries.
 - **Role-based access control.** Seven roles, enforced on the server and mirrored in the UI.
 
@@ -204,6 +205,8 @@ Segregation of duties is enforced **twice**. The API rejects a countersignature 
 │       ├── components/app/      AttestationPanel, StellarWallet, shared UI
 │       └── pages/               public/, auth/, app/
 ├── contracts/                   Soroban attestation registry (Rust)
+├── verifier/                    standalone package verifier: CLI, browser page, shared test vectors
+├── docs/                        on-chain footprint, verifying a package
 ├── memory/PRD.md                product requirements
 ├── docker-compose.yml           Postgres + API
 └── .github/workflows/ci.yml     backend, frontend and contract pipelines
@@ -406,11 +409,14 @@ cd contracts && cargo test
 
 # Web app
 cd frontend && CI=true yarn build
+
+# Standalone verifier (no database or network needed)
+cd verifier && npm ci && npm test
 ```
 
 The API e2e suite boots the full NestJS app against Postgres. It checks the engine numbers, the exception workflow, the 403 role gates, package hash reproducibility, and the complete **link → attest → countersign → verify → sync** flow. That flow runs against an in-memory stand-in for the contract that enforces the contract's own rules, so CI doesn't depend on testnet. The same flow has been run end to end against real Stellar testnet.
 
-[GitHub Actions](.github/workflows/ci.yml) runs three jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **frontend** (production build with lint warnings as errors), and **contracts** (`cargo test` plus a wasm build uploaded as an artifact).
+[GitHub Actions](.github/workflows/ci.yml) runs these jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **verifier** (`npm test`, including the offline valid-vs-tampered demo), **frontend** (production build with lint warnings as errors), **contracts** (`cargo test` plus a wasm build uploaded as an artifact), the API Docker image build, and the no-AI policy check.
 
 ---
 
