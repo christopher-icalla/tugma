@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import * as sdk from "@stellar/stellar-sdk";
-import { createChainReader } from "../src/chain.js";
+import { createChainReader, withRetry } from "../src/chain.js";
 import { CONTRACT, ORG } from "./helpers.js";
 
 const HASH = "b51ee955ffc8".padEnd(64, "0");
@@ -80,6 +80,17 @@ test("versionCount() passes the opaque org and package id as strings", async () 
   assert.equal(await reader.versionCount(ORG, "pkg-2026-01-01-2026-03-31"), 2);
   assert.equal(server.calls[0].fn, "version_count");
   assert.deepEqual(server.calls[0].args, [ORG, "pkg-2026-01-01-2026-03-31"]);
+});
+
+test("retries when the RPC cannot be reached, then gives up", async () => {
+  let n = 0;
+  const flaky = { async simulateTransaction() { if (++n < 3) throw new Error("fetch failed"); return { result: { retval: sdk.xdr.ScVal.scvVoid() } }; } };
+  assert.equal(await createChainReader(sdk, config, flaky).verify("0".repeat(64)), null);
+  assert.equal(n, 3);
+  assert.equal(await withRetry(async () => "ok", 3, 0), "ok");
+  let m = 0;
+  await assert.rejects(withRetry(async () => { m++; throw new Error("down"); }, 3, 0), /down/);
+  assert.equal(m, 3);
 });
 
 test("rejects malformed hashes before calling the network", async () => {

@@ -24,7 +24,7 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
       .addOperation(contract.call(method, ...args))
       .setTimeout(30)
       .build();
-    const sim = await rpcServer.simulateTransaction(tx);
+    const sim = await withRetry(() => rpcServer.simulateTransaction(tx));
     if (sdk.rpc.Api.isSimulationError(sim)) {
       if (NOT_FOUND.test(String(sim.error))) return null;
       throw new Error(`Contract read ${method} failed: ${sim.error}`);
@@ -48,6 +48,22 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
       return Number((await read("version_count", str(org), str(packageId))) ?? 0);
     },
   };
+}
+
+/**
+ * Retries a call that failed to reach the RPC (a thrown error, such as a
+ * dropped connection). A simulation error is a normal response and is not
+ * retried.
+ */
+export async function withRetry(call, attempts = 3, delayMs = 500) {
+  for (let i = 1; ; i++) {
+    try {
+      return await call();
+    } catch (e) {
+      if (i >= attempts) throw e;
+      await new Promise((r) => setTimeout(r, delayMs * i));
+    }
+  }
 }
 
 const toHex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
