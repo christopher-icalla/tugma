@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; connect-src https:; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>TUGMA Package Verifier</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">TUGMA · Independent verification</p>
+      <h1>Check an evidence package against Stellar</h1>
+      <p>Choose a package file downloaded from TUGMA. This page rebuilds its canonical form, recalculates the SHA-256 hash and reads the attestation directly from the Stellar Testnet contract through Soroban RPC. It never contacts TUGMA's servers, and the file never leaves your browser.</p>
+    </header>
+
+    <label id="drop" class="drop" for="file">
+      <span>Drop a <code>tugma-pkg-….json</code> file here, or click to choose one</span>
+      <input id="file" type="file" accept="application/json,.json">
+    </label>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="result" class="result" hidden aria-live="polite"></section>
+
+    <details class="settings">
+      <summary>Network settings</summary>
+      <label>Soroban RPC <input id="rpc" type="url" spellcheck="false"></label>
+      <label>Attestation contract <input id="contract" type="text" spellcheck="false"></label>
+      <p>The contract is set here, never taken from the file. Defaults are TUGMA's public Testnet deployment.</p>
+    </details>
+
+    <footer>
+      <p>A valid result establishes package integrity: the file is exactly the package attested on Stellar. It does not establish that the contents are true or that the organization is compliant.</p>
+      <p>Open source (MIT): <code>verifier/</code> in the TUGMA repository. The same checks run from the command line with <code>tugma-verify</code>.</p>
+    </footer>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@stellar/stellar-sdk@17.2.0/dist/stellar-sdk.min.js"
+          integrity="sha384-iiGSUCNti9bHQMbOTOp5AiZIRRgJH18I4MQj2E/+diWdn1Vl+ITA3iM4SLptxjPB"
+          crossorigin="anonymous"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

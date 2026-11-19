@@ -1,0 +1,44 @@
+:root {
+  --bg: #020617;
+  --panel: #0f172a;
+  --line: #1e293b;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --ok: #34d399;
+  --bad: #f87171;
+  --warn: #fbbf24;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+h1 { font-size: 1.75rem; line-height: 1.2; margin: 4px 0 12px; }
+h2 { margin: 0 0 4px; font-size: 1.25rem; }
+p { color: var(--muted); }
+code, .mono { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 0.85em; word-break: break-all; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.75rem; color: var(--ok); margin: 0; }
+.drop { display: block; margin-top: 24px; padding: 36px 20px; text-align: center; border: 2px dashed var(--line); border-radius: 10px; background: var(--panel); cursor: pointer; }
+.drop.over, .drop:hover { border-color: var(--ok); }
+.drop input { display: block; margin: 14px auto 0; color: var(--muted); max-width: 100%; }
+.status { min-height: 1.5em; }
+.result { margin-top: 8px; padding: 20px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); }
+.result.valid { border-color: var(--ok); }
+.result.valid h2 { color: var(--ok); }
+.result.invalid { border-color: var(--bad); }
+.result.invalid h2 { color: var(--bad); }
+.summary { color: var(--text); margin-top: 0; }
+.checks { list-style: none; padding: 0; margin: 16px 0; }
+.checks li { padding: 6px 0; border-top: 1px solid var(--line); word-break: break-word; }
+.checks .ok { color: var(--ok); }
+.checks .fail { color: var(--bad); }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 16px 0; }
+dt { color: var(--muted); }
+dd { margin: 0; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; } dd { margin-bottom: 8px; } }
+.warning { color: var(--warn); }
+.limitation { font-size: 0.9rem; }
+a { color: var(--ok); }
+.settings { margin-top: 28px; color: var(--muted); }
+.settings label { display: block; margin-top: 10px; }
+.settings input { display: block; width: 100%; margin-top: 4px; padding: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, Consolas, monospace; }
+footer { margin-top: 40px; border-top: 1px solid var(--line); font-size: 0.9rem; }
