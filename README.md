@@ -13,7 +13,7 @@
 [![Soroban](https://img.shields.io/badge/Soroban-Rust%20contract-orange)](contracts/)
 [![No AI](https://img.shields.io/badge/AI%2FML-none%2C%20enforced%20in%20CI-success)](#deterministic-by-design-no-ai)
 
-[**Live app**](https://tugmaapp.com) · [**Contract on Stellar Expert**](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [**Verify a package**](docs/verify-a-package.md) · [**What goes on-chain**](docs/onchain-footprint.md)
+[**Live app**](https://tugmaapp.com) · [**Contract on Stellar Expert**](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [**Verify a package**](https://christopher-icalla.github.io/tugma/verifier/web/) · [**What goes on-chain**](docs/onchain-footprint.md)
 
 <a href="https://tugmaapp.com"><img src="docs/images/site-home.png" alt="TUGMA website: Compliance You Can Prove" width="900"></a>
 
@@ -34,7 +34,8 @@ TUGMA continuously tests actual payment operations against regulatory and organi
 | Explore the contract | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) · [Stellar Lab](https://lab.stellar.org/r/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH) |
 | Network | Stellar Testnet · passphrase `Test SDF Network ; September 2015` |
 | Soroban RPC | `https://soroban-testnet.stellar.org` |
-| **Browser verifier** (GitHub Pages) | [christopher-icalla.github.io/tugma/web](https://christopher-icalla.github.io/tugma/web/), deployed by [`verifier-pages.yml`](.github/workflows/verifier-pages.yml) once Pages is enabled for the repository |
+| **Browser verifier** (GitHub Pages) | [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) |
+| Project site (GitHub Pages) | [christopher-icalla.github.io/tugma](https://christopher-icalla.github.io/tugma/), published from [`site/`](site/) by [`jekyll-gh-pages.yml`](.github/workflows/jekyll-gh-pages.yml) |
 | Command-line verifier | [`verifier/`](verifier/): `node bin/tugma-verify.js <package.json>` |
 | Contract source | [`contracts/contracts/attestation/src/lib.rs`](contracts/contracts/attestation/src/lib.rs) |
 
@@ -55,32 +56,6 @@ TUGMA continuously tests actual payment operations against regulatory and organi
     <td colspan="2"><a href="https://stellar.expert/explorer/testnet/contract/CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH"><img src="docs/images/stellar-expert-contract.png" alt="Attestation contract on Stellar Expert"></a><br><sub><b>The attestation contract on Stellar Expert</b>: deployment, signer authorization, attestation and countersignature on Testnet</sub></td>
   </tr>
 </table>
-
----
-
-## Contents
-
-- [Live deployments](#live-deployments)
-- [Screenshots](#screenshots)
-- [The problem](#the-problem)
-- [How TUGMA works](#how-tugma-works)
-- [Features](#features)
-- [Architecture](#architecture)
-- [On-chain attestation flow](#on-chain-attestation-flow)
-- [Verify a package yourself](#verify-a-package-yourself)
-- [Tech stack](#tech-stack)
-- [Repository layout](#repository-layout)
-- [Getting started](#getting-started)
-- [Setting up Stellar signing](#setting-up-stellar-signing)
-- [Configuration](#configuration)
-- [Controls and the demo dataset](#controls-and-the-demo-dataset)
-- [Roles and permissions](#roles-and-permissions)
-- [API reference](#api-reference)
-- [Testing and CI](#testing-and-ci)
-- [Deterministic by design: no AI](#deterministic-by-design-no-ai)
-- [Security model](#security-model)
-- [Disclaimer](#disclaimer)
-- [License](#license)
 
 ---
 
@@ -252,7 +227,7 @@ VALID: this package is the one attested on Stellar.
 | `MISMATCH` | The attestation is for a different package, organization or period |
 | `BAD_SIGNATURE` | A signed export whose SEP-53 signature does not check out |
 
-The same checks run in the browser ([`verifier/web`](verifier/web), `npm run web`), and `npm run demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
+The same checks run in the browser, hosted at [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) or locally with `npm run web`, and `npm run demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
 
 > A `VALID` result establishes **package integrity**, not that the contents are true or that the organization is compliant.
 
@@ -296,9 +271,10 @@ The same checks run in the browser ([`verifier/web`](verifier/web), `npm run web
 ├── contracts/                   Soroban attestation registry (Rust)
 ├── verifier/                    standalone package verifier: CLI, browser page, shared test vectors
 ├── docs/                        on-chain footprint, verifying a package, README images
+├── site/                        GitHub Pages landing page
 ├── memory/PRD.md                product requirements
 ├── docker-compose.yml           Postgres + API
-└── .github/workflows/          ci.yml (all pipelines), verifier-pages.yml (hosted verifier)
+└── .github/workflows/          ci.yml (all pipelines), jekyll-gh-pages.yml (GitHub Pages site and hosted verifier)
 ```
 
 ---
@@ -346,6 +322,12 @@ yarn install
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 yarn start                        # http://localhost:3000
 ```
+
+### Configuration, roles and API
+
+- **Configuration:** every API setting is an environment variable, validated at startup and documented in [`backend/.env.example`](backend/.env.example). The API refuses to start on anything but Stellar Testnet.
+- **Roles:** seven roles (ADMIN, COMPLIANCE, RISK, PAYMENT_OPS, FINANCE, AUDITOR, VIEWER), enforced on the server in [`backend/src/auth/permissions.ts`](backend/src/auth/permissions.ts).
+- **API:** REST under `/api`, defined in [`backend/src/api`](backend/src/api) and [`backend/src/stellar`](backend/src/stellar). Public routes: `/health`, `/stellar/config` and `/stellar/verify/:hash`.
 
 ### Demo accounts
 
@@ -398,32 +380,6 @@ Contract build, test and deploy instructions are in [`contracts/README.md`](cont
 
 ---
 
-## Configuration
-
-All API settings are environment variables, validated at startup (see [`backend/.env.example`](backend/.env.example)).
-
-| Variable | Required | Default | Purpose |
-|---|---|---|---|
-| `DATABASE_URL` | yes | — | PostgreSQL connection string |
-| `JWT_SECRET` | yes | — | HS256 signing secret (≥ 32 chars; use 48+ random bytes) |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | yes | — | Seeded administrator (password ≥ 12 chars) |
-| `DEMO_USER_PASSWORD` | yes | — | Password for the six demo role users (≥ 12 chars) |
-| `PORT` | | `8001` | HTTP port |
-| `FRONTEND_URL` | | `http://localhost:3000` | CORS origin(s), comma-separated; also the base of password-reset links |
-| `COOKIE_SECURE` | | `true` | Secure cookies. Set `false` only for plain-HTTP non-localhost setups |
-| `COOKIE_SAMESITE` | | `lax` | `lax` when web app and API share a site (e.g. `tugmaapp.com` + `api.tugmaapp.com`); `none` only for different sites |
-| `TRUST_PROXY` | | `0` | Number of reverse proxies in front of the API. Set `1` behind a load balancer so rate limits see real client IPs |
-| `EMAIL_API_URL` / `EMAIL_API_KEY` / `EMAIL_FROM_NAME` | | — | Password-reset email provider; without it, the link is logged on localhost |
-| `STELLAR_NETWORK` | | `TESTNET` | Must be `TESTNET`; the API refuses to start otherwise |
-| `STELLAR_RPC_URL` | | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint |
-| `STELLAR_NETWORK_PASSPHRASE` | | `Test SDF Network ; September 2015` | Must be the Testnet passphrase (enforced) |
-| `STELLAR_CONTRACT_ID` | | TUGMA testnet registry | Attestation contract |
-| `STELLAR_EXPLORER_URL` | | `https://stellar.expert/explorer/testnet` | Explorer links in the UI |
-
-Frontend: `REACT_APP_BACKEND_URL` is the API origin.
-
----
-
 ## Controls and the demo dataset
 
 | Code | Control | Requirement | Logic | Latest result |
@@ -435,56 +391,6 @@ Frontend: `REACT_APP_BACKEND_URL` is the API origin.
 | CTRL-005 | Settlement Reconciliation | BSP-PS-04 | Settlement and payout variance > 0.01 PHP; duplicate idempotency keys | 82 fail, 150 not testable |
 
 The dataset is **synthetic and reproducible**. It has 10,000 transactions across 150 merchants, generated from a fixed seed, with an exact set of injected defects: 60 settlement discrepancies, 7 payout breaches, 15 duplicates, 25 missing approvals, 5 segregation-of-duty breaches, 10 missing-evidence cases, and 150 unsettled transactions. The engine *detects* these defects from the transaction fields; it never reads them back as answers. The result is **122 exceptions, 72 of them high severity**.
-
----
-
-## Roles and permissions
-
-| Permission | ADMIN | COMPLIANCE | RISK | PAYMENT_OPS | FINANCE | AUDITOR | VIEWER |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Read dashboards, controls, transactions, exceptions, evidence, reports | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Assign, transition, remediate, comment on exceptions; add evidence | ✓ | ✓ | ✓ | ✓ | ✓ | | |
-| Verify exceptions (≠ resolver) | ✓ | ✓ | ✓ | | | | |
-| Run controls | ✓ | ✓ | ✓ | ✓ | | | |
-| Generate evidence packages | ✓ | ✓ | | | | | |
-| Attest a package on Stellar | ✓ | ✓ | | | | | |
-| Countersign an attestation (≠ attester) | ✓ | ✓ | ✓ | | | | |
-| Read audit trail | ✓ | ✓ | | | | ✓ | |
-
-The server is the source of truth ([`backend/src/auth/permissions.ts`](backend/src/auth/permissions.ts)), and the UI mirrors it in [`frontend/src/lib/perms.js`](frontend/src/lib/perms.js) only to hide controls a role can't use.
-
----
-
-## API reference
-
-Every route is under `/api`. Errors are returned as `{ "detail": "..." }`. Routes marked 🌐 are public; all others need a session.
-
-| Method | Path | Notes |
-|---|---|---|
-| GET | `/health` 🌐 | Liveness + DB check |
-| POST | `/auth/login` 🌐 · `/auth/logout` · `/auth/refresh` 🌐 | httpOnly cookie session |
-| GET | `/auth/me` | Current user |
-| POST | `/auth/forgot-password` 🌐 · `/auth/reset-password` 🌐 | Single-use, 1-hour tokens; rate limited |
-| GET | `/organization` · `/dashboard/summary` · `/regulatory/sources` | |
-| GET | `/controls` · `/controls/:code` | Latest run per control, run history |
-| POST | `/controls/run` | Re-runs the engine (append-only) |
-| GET | `/transactions` · `/transactions/:id` | `page`, `page_size ≤ 100`, `search`, `control`, `test_status`, `payment_status`, `risk_status`, `has_exception`, `sort`, `direction` |
-| GET | `/exceptions` · `/exceptions/:code` · `/exceptions/:code/chain` | Facets, explanation, evidence chain |
-| POST | `/exceptions/:code/assign` · `/transition` · `/remediation` · `/comment` | Workflow |
-| GET / POST | `/evidence` · `/evidence/completeness` | Content-hashed evidence |
-| GET | `/evidence/:id/export` | One evidence record with its exact hash input, for a per-document check |
-| POST | `/evidence-packages/generate` | `{ name?, period_start, period_end }` → canonical SHA-256 |
-| GET | `/evidence-packages` · `/evidence-packages/:id` · `/reports` | Includes `stellar` status and `attestations` versions |
-| GET | `/evidence-packages/:id/export` | Finalized package in canonical form, for the standalone verifier |
-| GET | `/audit-logs` | `entity_id`, `limit ≤ 500` |
-| GET | `/stellar/config` 🌐 | Network, contract, explorer |
-| GET | `/stellar/verify/:hash` 🌐 | On-chain lookup of a package hash |
-| GET / DELETE | `/stellar/wallet` | Linked wallet + on-chain signer status / unlink |
-| POST | `/stellar/wallet/challenge` · `/stellar/wallet/link` | SEP-53 ownership proof |
-| POST | `/stellar/packages/:id/attest/prepare` · `/countersign/prepare` | Returns unsigned XDR + `pending_id` |
-| POST | `/stellar/submit` | `{ pending_id, signed_xdr }` → submitted and confirmed |
-| POST | `/stellar/packages/:id/sync` | Rebuild records from contract state |
-| GET | `/stellar/attestations` | All on-chain versions for the organization |
 
 ---
 
@@ -513,38 +419,9 @@ The API e2e suite boots the full NestJS app against Postgres. It checks the engi
 
 ## Deterministic by design: no AI
 
-TUGMA uses **no AI, LLM or machine-learning model** anywhere in its compliance or
-evidence-attestation workflow. Control evaluation, regulatory mapping, exception
-explanations, exception handling, remediation, evidence processing, package
-hashing, Stellar attestation and verification are all deterministic code.
+TUGMA uses **no AI, LLM or machine-learning model** in its compliance or attestation workflow. Control tests, regulatory mapping, exception explanations, evidence hashing, attestation and verification are deterministic code, because an integrity proof only means something if the data behind it can be reproduced byte for byte. [`scripts/check-no-ai.mjs`](scripts/check-no-ai.mjs) enforces this in CI: it fails the build if an AI/ML library appears in any dependency tree or if source code calls a hosted AI API.
 
-Why it matters: an integrity proof is only meaningful if the data behind it is
-produced reproducibly. AI-generated summaries, mappings or suggestions could
-hallucinate or be manipulated, and could not be reproduced byte-for-byte, so
-they would undermine the SHA-256 commitment that Stellar anchors.
-
-What each "intelligence" or "explanation" in the product actually is:
-
-| Feature | How it is produced |
-|---|---|
-| Regulatory Intelligence (requirements → controls) | Curated reference data maintained by people (`backend/src/seed/reference-data.ts`) |
-| Control tests | Fixed rules over transaction fields (`backend/src/engine/engine.service.ts`) |
-| Exception explanations | Templated strings of expected value, actual value, variance and tolerance |
-| Remediation | Entered by authorized users; nothing is suggested or generated |
-| Evidence packages | Canonical sorted-key JSON hashed with SHA-256 (`backend/src/api/evidence.controller.ts`) |
-
-**Enforced, not just stated.** [`scripts/check-no-ai.mjs`](scripts/check-no-ai.mjs) runs in CI
-and fails the build if an AI/ML library appears in any dependency tree (direct or
-transitive, npm or Rust) or if source code calls a hosted AI API or reads an AI
-provider's credentials. Run it yourself:
-
-```sh
-node scripts/check-no-ai.mjs
-```
-
-Stellar access is **Testnet-only** as well: the API refuses to start if
-`STELLAR_NETWORK` or `STELLAR_NETWORK_PASSPHRASE` is anything other than Testnet
-(`backend/src/config.ts`).
+---
 
 ## Security model
 
