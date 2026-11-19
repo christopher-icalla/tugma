@@ -55,6 +55,22 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  verifier:
+    name: Standalone verifier (Node)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: verifier
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: verifier/package-lock.json
+      - run: npm ci
+      - run: npm test
+
   frontend:
     name: Frontend (React build)
     runs-on: ubuntu-latest

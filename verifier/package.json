@@ -1,0 +1,20 @@
+{
+  "name": "@tugma/verify",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Standalone verifier for TUGMA evidence packages: recomputes the canonical SHA-256 and checks it against the Stellar Testnet attestation contract through Soroban RPC, without TUGMA's API.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "17.2.0"
+  }
+}

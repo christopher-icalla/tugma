@@ -40,7 +40,7 @@ const SOURCE_PATTERNS = [
   /\b(OPENAI|ANTHROPIC|GEMINI|GOOGLE_GENAI|COHERE|MISTRAL|GROQ|OPENROUTER|HUGGINGFACE|HF)_API_KEY\b/,
 ];
 
-const SOURCE_DIRS = ["backend/src", "backend/prisma", "frontend/src", "contracts/contracts", "contracts/scripts", "scripts"];
+const SOURCE_DIRS = ["backend/src", "backend/prisma", "frontend/src", "contracts/contracts", "contracts/scripts", "scripts", "verifier/src", "verifier/test"];
 const SOURCE_EXT = /\.(m?[jt]sx?|rs|sh|py|prisma|sql|json|ya?ml)$/;
 const SELF = "scripts/check-no-ai.mjs";
 
@@ -48,7 +48,7 @@ const problems = [];
 const isAiPackage = (name) => PACKAGES.includes(name) || PACKAGE_PREFIXES.some((p) => name.startsWith(p));
 
 // --- npm: package.json (direct) and package-lock.json (transitive)
-for (const dir of ["backend", "frontend"]) {
+for (const dir of ["backend", "frontend", "verifier"]) {
   const pkgPath = join(ROOT, dir, "package.json");
   if (existsSync(pkgPath)) {
     const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));

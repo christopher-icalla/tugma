@@ -1,0 +1,99 @@
+{
+  "description": "Canonical JSON and SHA-256 test vectors shared by the TUGMA backend and the standalone verifier.",
+  "vectors": [
+    {
+      "name": "evidence package manifest",
+      "input": {
+        "period": [
+          "2026-01-01",
+          "2026-03-31"
+        ],
+        "regulatory_sources": [
+          "SRC-AMLC-2025",
+          "SRC-BSP-MORPS"
+        ],
+        "requirements": [
+          "REQ-001",
+          "REQ-002"
+        ],
+        "controls": [
+          "CTRL-001",
+          "CTRL-002",
+          "CTRL-005"
+        ],
+        "test_runs": [
+          "run-0a1b2c3d4e5f"
+        ],
+        "transactions": [
+          "TX-847291"
+        ],
+        "exceptions": [
+          "EXC-CTRL-005-TX-847291"
+        ],
+        "remediations": [
+          "rem-01"
+        ],
+        "evidence": [
+          "evd-0a1b2c3d4e:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+        ],
+        "counts": {
+          "controls": 3,
+          "transactions": 1,
+          "exceptions": 1,
+          "evidence": 1,
+          "completeness": 100
+        }
+      },
+      "canonical": "{\"controls\":[\"CTRL-001\",\"CTRL-002\",\"CTRL-005\"],\"counts\":{\"completeness\":100,\"controls\":3,\"evidence\":1,\"exceptions\":1,\"transactions\":1},\"evidence\":[\"evd-0a1b2c3d4e:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08\"],\"exceptions\":[\"EXC-CTRL-005-TX-847291\"],\"period\":[\"2026-01-01\",\"2026-03-31\"],\"regulatory_sources\":[\"SRC-AMLC-2025\",\"SRC-BSP-MORPS\"],\"remediations\":[\"rem-01\"],\"requirements\":[\"REQ-001\",\"REQ-002\"],\"test_runs\":[\"run-0a1b2c3d4e5f\"],\"transactions\":[\"TX-847291\"]}",
+      "sha256": "b51ee955ffc869d3d20da1e68855097c5826d3f890354fc4c81887c8b6b77eca"
+    },
+    {
+      "name": "keys sorted at every depth, arrays kept in order",
+      "input": {
+        "b": {
+          "z": 1,
+          "a": [
+            {
+              "y": 2,
+              "x": 1
+            },
+            3
+          ]
+        },
+        "a": null
+      },
+      "canonical": "{\"a\":null,\"b\":{\"a\":[{\"x\":1,\"y\":2},3],\"z\":1}}",
+      "sha256": "53a05638d6f951f98d8e60671c76714444f66b6f7804c14b428a8d018db59d66"
+    },
+    {
+      "name": "non-ASCII text stays UTF-8",
+      "input": {
+        "name": "Evidence Package 2026-01-01 → 2026-03-31",
+        "currency": "₱"
+      },
+      "canonical": "{\"currency\":\"₱\",\"name\":\"Evidence Package 2026-01-01 → 2026-03-31\"}",
+      "sha256": "a719fd028220f0ba43a8a51e8c8845b028e45635819930896e8d8c6a18ae3c88"
+    },
+    {
+      "name": "numbers and booleans",
+      "input": {
+        "n": [
+          0,
+          -1,
+          1.5,
+          100
+        ],
+        "ok": true,
+        "no": false
+      },
+      "canonical": "{\"n\":[0,-1,1.5,100],\"no\":false,\"ok\":true}",
+      "sha256": "592c72534ed0b738f05367309c9cc90127224d9c832d27f71b786c75b429858d"
+    },
+    {
+      "name": "empty object",
+      "input": {},
+      "canonical": "{}",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    }
+  ]
+}
