@@ -11,10 +11,27 @@ const HEADLINE = {
   INVALID_FILE: ["NOT VALID", "This is not a TUGMA evidence-package export."],
 };
 
-export function viewModel(result, explorerUrl = "https://stellar.expert/explorer/testnet") {
-  const [title, summary] = HEADLINE[result.status];
+/** A `?hash=` from a QR code or link: 64 hex characters, else null. */
+export function expectedHashFrom(search) {
+  const h = new URLSearchParams(search).get("hash")?.trim().toLowerCase() ?? "";
+  return /^[0-9a-f]{64}$/.test(h) ? h : null;
+}
+
+export function viewModel(result, explorerUrl = "https://stellar.expert/explorer/testnet", expectedHash = null) {
+  let [title, summary] = HEADLINE[result.status];
+  let valid = result.valid;
   const a = result.attestation;
   const details = [];
+  const checks = result.checks.map((c) => ({ ok: c.ok, text: `${c.name}: ${c.detail}` }));
+  if (expectedHash) {
+    const same = result.recomputed_hash === expectedHash;
+    checks.push({ ok: same, text: `Hash from the link: ${same ? "matches this file" : `the link is for ${expectedHash}, not this file`}` });
+    if (!same) {
+      valid = false;
+      title = "NOT THE LINKED PACKAGE";
+      summary = "This file is not the package the link or QR code refers to.";
+    }
+  }
   if (result.recomputed_hash) details.push(["Recomputed SHA-256", result.recomputed_hash]);
   if (a && result.status === "VALID") {
     details.push(
@@ -28,10 +45,10 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
   }
   details.push(["Contract", result.contract_id]);
   return {
-    valid: result.valid,
+    valid,
     title,
     summary,
-    checks: result.checks.map((c) => ({ ok: c.ok, text: `${c.name}: ${c.detail}` })),
+    checks,
     details,
     warnings: result.warnings,
     limitation: result.limitation,

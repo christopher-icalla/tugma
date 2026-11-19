@@ -3,6 +3,7 @@ import { PublicNav, PublicFooter } from "@/components/public/PublicChrome";
 import { Section, Eyebrow } from "@/components/public/Primitives";
 import { ArrowDown, ShieldCheck, Lock, FileCheck, Loader2, SearchCheck } from "lucide-react";
 import { api, formatApiErrorDetail } from "@/lib/api";
+import { verifierLink } from "@/lib/verifier";
 
 const CHAIN = [
   ["Evidence Package", "A finalized, immutable set of control evidence assembled for a period."],
@@ -97,6 +98,12 @@ function VerifyHash() {
         </button>
       </form>
       {state.error && <p className="mt-3 font-mono text-xs text-rose-300">{state.error}</p>}
+      <p className="mt-3 text-xs text-slate-400" data-testid="verify-yourself">
+        Have the package file? Check it yourself with the open-source verifier, which reads Stellar directly and never calls TUGMA.{" "}
+        <a href={verifierLink(valid ? hash.trim().toLowerCase() : null)} target="_blank" rel="noopener noreferrer" className="text-sky-300 hover:underline">
+          Verify a package file
+        </a>
+      </p>
       {r && (r.found ? (
         <dl className="mt-4 grid gap-2 font-mono text-[11px] sm:grid-cols-2" data-testid="verify-hash-found">
           <Fact k="Result" v={<span className="text-emerald-300">Attested on {r.network}</span>} />

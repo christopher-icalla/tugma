@@ -42,3 +42,5 @@ a { color: var(--ok); }
 .settings label { display: block; margin-top: 10px; }
 .settings input { display: block; width: 100%; margin-top: 4px; padding: 8px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, Consolas, monospace; }
 footer { margin-top: 40px; border-top: 1px solid var(--line); font-size: 0.9rem; }
+.expected { color: var(--ok); margin: 16px 0 0; }
+.expected:empty { display: none; }

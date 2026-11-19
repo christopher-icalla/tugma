@@ -9,6 +9,7 @@ import { can } from "@/lib/perms";
 import { toast } from "sonner";
 import AttestationPanel from "@/components/app/AttestationPanel";
 import DownloadPackageButton from "@/components/app/DownloadPackageButton";
+import PackageQr from "@/components/app/PackageQr";
 
 export default function Reports() {
   const { user } = useAuth();
@@ -89,6 +90,7 @@ export default function Reports() {
                     <p className="mt-1 break-all font-mono text-[11px] text-emerald-300/80" data-testid={`pkg-hash-${p.id}`}>{p.canonical_hash}</p>
                   </div>
                   <DownloadPackageButton pkg={p} />
+                  <PackageQr pkg={p} />
                 </div>
                 <AttestationPanel pkg={p} stellarConfig={stellarConfig} onChange={load} />
               </div>

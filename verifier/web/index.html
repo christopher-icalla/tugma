@@ -16,6 +16,7 @@
       <p>Choose a package file downloaded from TUGMA. This page rebuilds its canonical form, recalculates the SHA-256 hash and reads the attestation directly from the Stellar Testnet contract through Soroban RPC. It never contacts TUGMA's servers, and the file never leaves your browser.</p>
     </header>
 
+    <p id="expected" class="expected mono"></p>
     <label id="drop" class="drop" for="file">
       <span>Drop a <code>tugma-pkg-….json</code> file here, or click to choose one</span>
       <input id="file" type="file" accept="application/json,.json">

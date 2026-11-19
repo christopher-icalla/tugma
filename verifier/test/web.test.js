@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import * as sdk from "@stellar/stellar-sdk";
 import { TESTNET } from "../src/network.js";
 import { verifyPackage } from "../src/verify.js";
-import { viewModel } from "../web/view.js";
+import { expectedHashFrom, viewModel } from "../web/view.js";
 import { exportedPackage, fakeChain } from "./helpers.js";
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
@@ -44,4 +44,20 @@ test("view model for a valid and a tampered package", async () => {
   assert.equal(bad.valid, false);
   assert.equal(bad.title, "NOT VALID: TAMPERED");
   assert.ok(bad.checks.some((c) => !c.ok));
+});
+
+test("a ?hash= link must match the dropped file", async () => {
+  const chain = fakeChain();
+  const pkg = await exportedPackage();
+  chain.attest(pkg);
+  const result = await verifyPackage(pkg, chain);
+
+  assert.equal(expectedHashFrom(`?hash=${pkg.canonical_hash.toUpperCase()}`), pkg.canonical_hash);
+  assert.equal(expectedHashFrom("?hash=nope"), null);
+  assert.equal(expectedHashFrom(""), null);
+
+  assert.equal(viewModel(result, undefined, pkg.canonical_hash).valid, true);
+  const other = viewModel(result, undefined, "f".repeat(64));
+  assert.equal(other.valid, false);
+  assert.equal(other.title, "NOT THE LINKED PACKAGE");
 });

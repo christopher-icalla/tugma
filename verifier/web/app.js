@@ -1,11 +1,14 @@
 import { createChainReader } from "../src/chain.js";
 import { TESTNET } from "../src/network.js";
 import { verifyPackage } from "../src/verify.js";
-import { viewModel } from "./view.js";
+import { expectedHashFrom, viewModel } from "./view.js";
 
 // The SDK's browser build (loaded by index.html with a pinned integrity hash).
 const sdk = globalThis.StellarSdk;
 const $ = (id) => document.getElementById(id);
+
+const expectedHash = expectedHashFrom(location.search);
+if (expectedHash) $("expected").textContent = `Checking for package ${expectedHash}`;
 
 $("rpc").value = TESTNET.rpcUrl;
 $("contract").value = TESTNET.contractId;
@@ -63,7 +66,7 @@ async function check(file) {
       contractId: $("contract").value.trim(),
       networkPassphrase: TESTNET.networkPassphrase,
     });
-    render(viewModel(await verifyPackage(bundle, reader)));
+    render(viewModel(await verifyPackage(bundle, reader), undefined, expectedHash));
   } catch (e) {
     showError(`Soroban RPC could not be reached or returned an error: ${e.message}`);
   } finally {
