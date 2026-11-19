@@ -59,6 +59,9 @@ export function fakeChain(contractId = CONTRACT) {
     async versionCount(org, packageId) {
       return records.filter((r) => r.org === org && r.package_id === packageId).length;
     },
+    async get(org, packageId, version) {
+      return records.find((r) => r.org === org && r.package_id === packageId && r.version === version) ?? null;
+    },
     signers: new Set(),
     async isSigner(org, address) {
       return this.signers.has(`${org}|${address}`);

@@ -46,12 +46,19 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
     );
   }
   details.push(["Contract", result.contract_id]);
+  const versions = (result.history?.versions ?? []).map((v) => ({
+    current: v.matches_file,
+    text: `v${v.version} · ${v.attested_at} · ${v.countersigned ? "countersigned" : "not countersigned"}${v.matches_file ? " · this file" : ""}`,
+    hash: v.hash,
+  }));
   return {
     valid,
     title,
     summary,
     checks,
     details,
+    versions,
+    versionsOmitted: result.history?.omitted ?? 0,
     warnings: result.warnings,
     limitation: result.limitation,
     contractLink: `${explorerUrl}/contract/${encodeURIComponent(result.contract_id)}`,

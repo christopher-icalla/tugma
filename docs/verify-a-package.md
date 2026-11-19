@@ -57,7 +57,7 @@ Open the page and drop the file on it. The file is read and hashed inside the br
 4. **On-chain attestation**: the contract's `verify(hash)` returns a record for the **recomputed** hash.
 5. **Package, organization and period**: that record is for this package id, organization and period.
 
-For a signed export it also checks the SEP-53 signature and reports whether the signer is currently an authorized signer for the organization on the contract. It also reports whether the attestation was countersigned and whether a newer version of the package has since been attested.
+For a signed export it also checks the SEP-53 signature and reports whether the signer is currently an authorized signer for the organization on the contract. It lists every attested version of the package, newest first (up to 25), with its hash, time and countersign status, and marks the version the file matches; for a `NOT_ATTESTED` file it shows the attested versions it fails to match. It also reports whether the attestation was countersigned and whether a newer version of the package has since been attested.
 
 | Result | Meaning |
 |---|---|

@@ -34,6 +34,17 @@ function render(vm) {
   for (const [k, v] of vm.details) dl.append(el("dt", null, k), el("dd", "mono", v));
   out.append(dl);
 
+  if (vm.versions.length) {
+    out.append(el("h3", null, "Versions on-chain (newest first)"));
+    const list = el("ol", "versions");
+    for (const v of vm.versions) {
+      const li = el("li", v.current ? "current" : null, v.text);
+      li.append(el("span", "mono hash", v.hash));
+      list.append(li);
+    }
+    out.append(list);
+    if (vm.versionsOmitted) out.append(el("p", null, `… and ${vm.versionsOmitted} older version(s).`));
+  }
   for (const w of vm.warnings) out.append(el("p", "warning", w));
   const link = el("a", null, "View the contract on Stellar Expert");
   link.href = vm.contractLink;

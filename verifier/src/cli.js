@@ -57,6 +57,13 @@ export function formatResult(r) {
       `  Exported by  ${r.signature ? `${r.signature.signer} at ${r.signature.exported_at}` : "unsigned file"}`,
     );
   }
+  if (r.history?.versions.length) {
+    lines.push("", "  Versions on-chain (newest first):");
+    for (const v of r.history.versions) {
+      lines.push(`    ${v.matches_file ? "=>" : "  "} v${v.version}  ${v.hash.slice(0, 16)}…  ${v.attested_at}  ${v.countersigned ? "countersigned" : "not countersigned"}${v.matches_file ? "  (this file)" : ""}`);
+    }
+    if (r.history.omitted) lines.push(`       … and ${r.history.omitted} older version(s)`);
+  }
   lines.push("", `  Contract     ${r.contract_id} (Stellar Testnet)`);
   for (const w of r.warnings) lines.push(`  Note: ${w}`);
   lines.push("", r.limitation);

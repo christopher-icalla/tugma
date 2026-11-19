@@ -47,6 +47,10 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
     async versionCount(org, packageId) {
       return Number((await read("version_count", str(org), str(packageId))) ?? 0);
     },
+    /** One attested version of a package, or null. */
+    async get(org, packageId, version) {
+      return normalizeAttestation(await read("get", str(org), str(packageId), sdk.nativeToScVal(version, { type: "u32" })));
+    },
     /** Whether `address` is currently an authorized signer for `org` on the contract. */
     async isSigner(org, address) {
       return Boolean(await read("is_signer", str(org), new sdk.Address(address).toScVal()));

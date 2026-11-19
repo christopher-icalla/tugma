@@ -44,3 +44,8 @@ a { color: var(--ok); }
 footer { margin-top: 40px; border-top: 1px solid var(--line); font-size: 0.9rem; }
 .expected { color: var(--ok); margin: 16px 0 0; }
 .expected:empty { display: none; }
+h3 { font-size: 1rem; margin: 18px 0 6px; }
+.versions { padding-left: 0; list-style: none; margin: 0; }
+.versions li { padding: 6px 0; border-top: 1px solid var(--line); color: var(--muted); }
+.versions li.current { color: var(--ok); }
+.versions .hash { display: block; font-size: 0.75rem; }

@@ -5,6 +5,32 @@ import { checkExportSignature } from "./signature.js";
 export const EXPORT_FORMAT = "tugma.evidence-package";
 export const EXPORT_FORMAT_VERSION = 1;
 
+/** At most this many versions are listed; older ones are summarized. */
+export const MAX_VERSIONS = 25;
+
+/**
+ * Every attested version of a package, newest first, marking the one whose
+ * hash is `hash`. Lists at most MAX_VERSIONS.
+ */
+export async function versionHistory(chain, org, packageId, hash) {
+  const count = await chain.versionCount(org, packageId);
+  const from = Math.max(1, count - MAX_VERSIONS + 1);
+  const versions = [];
+  for (let v = count; v >= from; v--) {
+    const a = await chain.get(org, packageId, v);
+    if (!a) continue;
+    versions.push({
+      version: a.version,
+      hash: a.hash,
+      attested_at: a.attested_at,
+      attested_ledger: a.attested_ledger,
+      countersigned: !!a.verifier,
+      matches_file: a.hash === hash,
+    });
+  }
+  return { count, versions, omitted: from - 1 };
+}
+
 export const LIMITATION =
   "A VALID result shows that this package is byte-for-byte the package attested on Stellar. " +
   "It establishes package integrity only, not that the contents are true or that the organization is compliant.";
@@ -85,7 +111,16 @@ export async function verifyPackage(bundle, chain) {
     : `no attestation for ${recomputed} on contract ${chain.contractId}`);
 
   if (!canonicalOk || !hashOk) return result("TAMPERED", { ...base, attestation });
-  if (!attestation) return result("NOT_ATTESTED", { ...base, attestation: null });
+  if (!attestation) {
+    // Show what was attested for the package the file claims to be, if anything.
+    const history = typeof bundle.org === "string" && typeof bundle.package_id === "string"
+      ? await versionHistory(chain, bundle.org, bundle.package_id, recomputed)
+      : null;
+    if (history?.count) {
+      warnings.push(`${history.count} version(s) of ${bundle.package_id} are attested on-chain, and this file matches none of them.`);
+    }
+    return result("NOT_ATTESTED", { ...base, attestation: null, history });
+  }
 
   // 3. The record must be for this package, organization and period.
   const period = Array.isArray(bundle.manifest.period) ? bundle.manifest.period : [];
@@ -101,7 +136,8 @@ export async function verifyPackage(bundle, chain) {
     : `chain has ${attestation.package_id} for ${attestation.org} (${attestation.period_start} to ${attestation.period_end})`);
   if (!same) return result("MISMATCH", { ...base, attestation });
 
-  const latest = await chain.versionCount(attestation.org, attestation.package_id);
+  const history = await versionHistory(chain, attestation.org, attestation.package_id, recomputed);
+  const latest = history.count;
   if (latest > attestation.version) {
     warnings.push(`This is version ${attestation.version}; version ${latest} of this package has since been attested.`);
   }
@@ -113,8 +149,8 @@ export async function verifyPackage(bundle, chain) {
     check("Export signature", signature.ok, signature.ok
       ? `signed by ${signature.signer}${signature.authorized_signer ? ", an authorized signer for this organization" : " (not an authorized signer on-chain)"}`
       : signature.problems.join("; "));
-    if (!signature.ok) return result("BAD_SIGNATURE", { ...base, attestation, latest_version: latest, signature });
+    if (!signature.ok) return result("BAD_SIGNATURE", { ...base, attestation, latest_version: latest, history, signature });
   }
 
-  return result("VALID", { ...base, attestation, latest_version: latest, signature });
+  return result("VALID", { ...base, attestation, latest_version: latest, history, signature });
 }
