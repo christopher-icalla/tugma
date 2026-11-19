@@ -1,0 +1,51 @@
+name: Verifier on GitHub Pages
+
+# Publishes verifier/web (and the verifier/src modules it imports) as a static
+# site, so anyone can check a package without any TUGMA server.
+#
+# One-time setup by a repository admin:
+#   1. Settings -> Pages -> Source: "GitHub Actions".
+#   2. Settings -> Secrets and variables -> Actions -> Variables:
+#      VERIFIER_PAGES = enabled
+# Until then, pushes skip this workflow; it can still be run manually.
+
+on:
+  push:
+    branches: [main]
+    paths: ["verifier/web/**", "verifier/src/**", ".github/workflows/verifier-pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: verifier-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || vars.VERIFIER_PAGES == 'enabled'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}web/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the static site
+        run: |
+          mkdir -p _site
+          cp -r verifier/web verifier/src _site/
+          cat > _site/index.html <<'EOF'
+          <!doctype html><meta charset="utf-8"><title>TUGMA Package Verifier</title>
+          <meta http-equiv="refresh" content="0; url=./web/">
+          <a href="./web/">TUGMA Package Verifier</a>
+          EOF
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

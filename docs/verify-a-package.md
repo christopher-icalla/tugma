@@ -36,6 +36,10 @@ Options: `--json` for machine-readable output, `--rpc <url>` to use another Soro
 
 ## 2b. Verify in a browser
 
+**Hosted:** https://christopher-icalla.github.io/tugma/web/ is published from this repository by [`verifier-pages.yml`](../.github/workflows/verifier-pages.yml) on GitHub Pages, so it does not depend on any TUGMA server. (A repository admin enables it once: set Pages to deploy from GitHub Actions and add the Actions variable `VERIFIER_PAGES=enabled`.)
+
+**Locally:**
+
 ```bash
 cd verifier
 npm run web        # serves http://localhost:8787/web/
