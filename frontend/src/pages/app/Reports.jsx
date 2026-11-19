@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { can } from "@/lib/perms";
 import { toast } from "sonner";
 import AttestationPanel from "@/components/app/AttestationPanel";
+import DownloadPackageButton from "@/components/app/DownloadPackageButton";
 
 export default function Reports() {
   const { user } = useAuth();
@@ -87,6 +88,7 @@ export default function Reports() {
                     <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Canonical Evidence Package · SHA-256</p>
                     <p className="mt-1 break-all font-mono text-[11px] text-emerald-300/80" data-testid={`pkg-hash-${p.id}`}>{p.canonical_hash}</p>
                   </div>
+                  <DownloadPackageButton pkg={p} />
                 </div>
                 <AttestationPanel pkg={p} stellarConfig={stellarConfig} onChange={load} />
               </div>
