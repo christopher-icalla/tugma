@@ -14,7 +14,8 @@
   "scripts": {
     "test": "node --test",
     "verify": "node bin/tugma-verify.js",
-    "web": "node bin/serve-web.js"
+    "web": "node bin/serve-web.js",
+    "demo": "node demo/run-demo.js"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "17.2.0"
