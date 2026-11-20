@@ -13,6 +13,7 @@ const PERMS = {
   "audit:read": ["ADMIN", "COMPLIANCE", "AUDITOR"],
   "controls:run": ["ADMIN", "PAYMENT_OPS", "RISK", "COMPLIANCE"],
   "signers:manage": ["ADMIN"],
+  "reminders:send": ["ADMIN", "COMPLIANCE"],
 };
 
 export function can(role, action) {

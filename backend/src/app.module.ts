@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { EvidenceController } from './api/evidence.controller';
 import { ExceptionsController } from './api/exceptions.controller';
+import { FollowUpsController } from './api/follow-ups.controller';
 import { OverviewController } from './api/overview.controller';
 import { TransactionsController } from './api/transactions.controller';
 import { AuthController } from './auth/auth.controller';
@@ -33,6 +34,7 @@ import { StellarController } from './stellar/stellar.controller';
     OverviewController,
     TransactionsController,
     ExceptionsController,
+    FollowUpsController,
     EvidenceController,
     StellarController,
   ],

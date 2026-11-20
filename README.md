@@ -113,6 +113,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 - **Deterministic control engine.** Five controls run against real transaction fields. Runs are append-only, and re-running never duplicates exceptions or resets their workflow state.
 - **Explainable exceptions.** Every failure records its check, expected value, actual value, variance and tolerance.
 - **Five-state workflow.** `OPEN → IN_REVIEW → REMEDIATION → RESOLVED → VERIFIED`. An exception can't be resolved without evidence and a completed remediation, and the verifier must be a different person from the resolver.
+- **Follow-ups and reminders.** The dashboard groups open exceptions by how far past their due date they are (not due, 1–7, 8–30, 30+ days) and lists attestations still waiting for a countersignature. Compliance leads can email each owner their overdue items and each eligible signer the packages to countersign (never the attesting wallet's owner), and every send is audited.
 - **Evidence Center.** Every evidence record carries a SHA-256 content hash, and completeness is scored per exception and per control.
 - **Evidence packages.** A canonical, sorted-key JSON manifest for a period is hashed with SHA-256. Regenerating the same period reproduces the same hash.
 - **On-chain attestation (Soroban).** Users sign with their own Freighter wallet: one authorized signer attests the package hash and a different one countersigns. Versions are append-only, and anyone can look up a hash on the public `/stellar` page.

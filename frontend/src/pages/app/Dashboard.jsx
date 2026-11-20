@@ -4,6 +4,7 @@ import { ArrowUpRight, Activity, ShieldCheck, AlertTriangle, Flame, FileCheck2, 
 import { useApi, PageHeader, Card } from "@/components/app/shared";
 import { LoadingState, ErrorState, EmptyState } from "@/components/States";
 import { StatusBadge } from "@/components/StatusBadge";
+import FollowUps from "@/components/app/FollowUps";
 
 const KPI_META = [
   ["transactions_analyzed", "Transactions Analyzed", Activity],
@@ -104,6 +105,8 @@ export default function Dashboard() {
           )}
         </Card>
       </div>
+
+      <FollowUps />
     </div>
   );
 }

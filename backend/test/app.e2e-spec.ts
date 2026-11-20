@@ -487,3 +487,37 @@ describe('key custody', () => {
     }
   });
 });
+
+describe('follow-ups and reminders', () => {
+  it('reports overdue exceptions by age and attestations awaiting countersignature', async () => {
+    const prisma = app.get(PrismaService);
+    const open = await prisma.controlException.findFirst({ where: { organization_id: DEMO_ORG_ID, status: 'OPEN' }, orderBy: { exception_code: 'asc' } });
+    const ops = await prisma.user.findUnique({ where: { email: 'ops@tugmademo.ph' } });
+    await prisma.controlException.update({
+      where: { id: open!.id },
+      data: { due_date: new Date(Date.now() - 40 * 86_400_000), owner_id: ops!.id, owner_name: ops!.name },
+    });
+
+    const { body } = await agents.viewer.get('/api/follow-ups');
+    const openCount = await prisma.controlException.count({ where: { organization_id: DEMO_ORG_ID, status: { in: ['OPEN', 'IN_REVIEW', 'REMEDIATION'] } } });
+    expect(Object.values(body.ageing as Record<string, number>).reduce((a, b) => a + b, 0)).toBe(openCount);
+    expect(body.ageing.overdue_30_plus).toBeGreaterThanOrEqual(1);
+    expect(body.overdue[0]).toMatchObject({ exception_code: open!.exception_code, bucket: 'overdue_30_plus' });
+    expect(body.overdue[0].days_overdue).toBeGreaterThanOrEqual(39);
+    const pending = await prisma.stellarAttestation.count({ where: { organization_id: DEMO_ORG_ID, verifier_address: null } });
+    expect(body.awaiting_countersign).toHaveLength(pending);
+    expect(body.email_configured).toBe(false);
+  });
+
+  it('lets only admins and compliance send reminders, and audits them', async () => {
+    expect((await agents.viewer.post('/api/follow-ups/remind')).status).toBe(403);
+    expect((await agents.ops.post('/api/follow-ups/remind')).status).toBe(403);
+    const res = await agents.compliance.post('/api/follow-ups/remind');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ email_configured: false, sent: 0 });
+    expect(res.body.recipients).toBeGreaterThanOrEqual(1);
+    expect(res.body.not_sent).toBe(res.body.recipients);
+    const log = await app.get(PrismaService).auditLog.findFirst({ where: { action: 'reminders.send' }, orderBy: { timestamp: 'desc' } });
+    expect(log?.after_state).toMatchObject({ recipients: res.body.recipients });
+  });
+});

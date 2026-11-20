@@ -6,5 +6,7 @@ const perMinute = (limit: number) => Throttle({ default: { limit, ttl: 60_000 } 
 export const AuthRateLimit = () => perMinute(10);
 /** Wallet linking and transaction building (each call hits Stellar RPC). */
 export const StellarWriteRateLimit = () => perMinute(20);
+/** Sends email to many people at once. */
+export const ReminderRateLimit = () => perMinute(3);
 /** Public, unauthenticated contract lookups. */
 export const PublicLookupRateLimit = () => perMinute(30);
