@@ -121,11 +121,11 @@ export const CONTROLS = [
   {
     control_code: 'CTRL-003', name: 'AML/CTPF Control Evidence', requirement_id: 'req-amlc-ctpf',
     category: 'AML/CTF', risk_level: 'HIGH', control_type: 'Detective', frequency: 'Monthly',
-    owner_role: 'COMPLIANCE', objective: 'Confirm AML program evidence and reporting completeness.',
-    description: 'Verifies that AML program artifacts exist for the review period. Not an AML transaction-monitoring replacement.',
-    automated: false, status: 'ACTIVE',
-    interpretation: 'TUGMA interprets AMLC program requirements as evidence of program operation, not as transaction monitoring.',
-    test_logic: 'If AML program evidence artifacts are present for the period -> PASS, else NOT_TESTABLE.',
+    owner_role: 'COMPLIANCE', objective: 'Identify covered transactions that need a CTR and same-day splits that suggest structuring.',
+    description: 'Flags single transactions above the PHP 500,000 covered-transaction threshold for CTR filing, and same-day transactions for one merchant that each fall just below it but together exceed it. A rule-based reporting check, not an AML transaction-monitoring replacement.',
+    automated: true, status: 'ACTIVE',
+    interpretation: 'TUGMA tests two deterministic AMLC reporting obligations (covered transactions and structuring red flags); the wider AML program stays with the compliance team.',
+    test_logic: 'transaction_amount > 500,000 PHP -> WARNING (CTR due within 5 working days). Two or more transactions for one merchant on one Manila calendar day, each between 450,000 and 500,000 PHP and together above 500,000 PHP -> FAIL (possible structuring, review for STR). Otherwise PASS.',
   },
   {
     control_code: 'CTRL-004', name: 'Merchant / End-User Protection', requirement_id: 'req-bsp-eup',
@@ -176,10 +176,11 @@ export const CONTROL_TESTS: Record<string, {
     logic_type: 'RULE', logic_definition: 'due_diligence_status == CURRENT', threshold: 'n/a', frequency: 'Quarterly', active: true,
   },
   'CTRL-003': {
-    name: 'AML Program Evidence',
-    description: 'Checks AML program evidence artifacts for the period.',
-    data_sources: ['evidence'], required_fields: [],
-    logic_type: 'RULE', logic_definition: 'AML program evidence present', threshold: 'n/a', frequency: 'Monthly', active: false,
+    name: 'Covered Transaction and Structuring Screen',
+    description: 'Flags covered transactions for CTR filing and same-day splits just below the threshold.',
+    data_sources: ['payment_transactions'], required_fields: ['transaction_amount', 'merchant_id', 'transaction_timestamp'],
+    logic_type: 'RULE', logic_definition: 'amount > 500,000 -> CTR; >=2 same-day merchant txns in [450,000, 500,000] summing > 500,000 -> structuring',
+    threshold: 'PHP 500,000', frequency: 'Daily', active: true,
   },
 };
 

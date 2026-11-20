@@ -386,11 +386,11 @@ Contract build, test and deploy instructions are in [`contracts/README.md`](cont
 |---|---|---|---|---|
 | CTRL-001 | Critical Third-Party Oversight | BSP-ITRM-01 | Critical vendors must have `CURRENT` due diligence | 1 warning (4 vendors) |
 | CTRL-002 | IT Risk Control Evidence | BSP-ITRM-02 | Approval recorded; initiator ≠ approver | 30 fail |
-| CTRL-003 | AML/CTPF Control Evidence | AMLC-CTF-01 | Program evidence for the period | Not testable (manual) |
+| CTRL-003 | AML/CTPF Control Evidence | AMLC-CTF-01 | Amount > PHP 500,000 needs a CTR; same-day splits for one merchant, each 450,000–500,000 and together above 500,000, are possible structuring | 4 warnings, 6 fail |
 | CTRL-004 | Merchant / End-User Protection | BSP-EUP-01 | Supporting evidence per transaction | 10 warnings |
 | CTRL-005 | Settlement Reconciliation | BSP-PS-04 | Settlement and payout variance > 0.01 PHP; duplicate idempotency keys | 82 fail, 150 not testable |
 
-The dataset is **synthetic and reproducible**. It has 10,000 transactions across 150 merchants, generated from a fixed seed, with an exact set of injected defects: 60 settlement discrepancies, 7 payout breaches, 15 duplicates, 25 missing approvals, 5 segregation-of-duty breaches, 10 missing-evidence cases, and 150 unsettled transactions. The engine *detects* these defects from the transaction fields; it never reads them back as answers. The result is **122 exceptions, 72 of them high severity**.
+The dataset is **synthetic and reproducible**. It has 10,000 transactions across 150 merchants, generated from a fixed seed, with an exact set of injected defects: 60 settlement discrepancies, 7 payout breaches, 15 duplicates, 25 missing approvals, 5 segregation-of-duty breaches, 10 missing-evidence cases, 4 covered transactions above PHP 500,000, 2 structuring patterns of 3 same-day transactions just below the threshold, and 150 unsettled transactions. The engine *detects* these defects from the transaction fields; it never reads them back as answers. The result is **132 exceptions, 78 of them high severity**.
 
 ---
 

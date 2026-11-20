@@ -24,6 +24,19 @@ export const DEFECT_SPEC = {
   segregation_of_duty: 5,
   missing_evidence: 10,
 } as const;
+/**
+ * AMLC covered-transaction threshold (PHP). A single transaction above it is
+ * a covered transaction that must be reported (CTR); several transactions
+ * just below it for one merchant on one day are a structuring red flag.
+ */
+export const COVERED_THRESHOLD = 500_000;
+/** Covered transactions injected into the dataset (amounts above the threshold). */
+export const COVERED_AMOUNTS = [612_500, 845_000, 1_250_000, 530_250] as const;
+/** Structuring patterns: each group is one merchant, one Manila day, all just below the threshold. */
+export const STRUCTURING_GROUPS = [
+  [485_000, 492_750, 497_300],
+  [478_900, 489_500, 499_000],
+] as const;
 /** Not yet settled -> NOT_TESTABLE for CTRL-005 (genuine, not a defect). */
 export const N_PENDING = 150;
 
@@ -100,6 +113,7 @@ class Rng {
 }
 
 const minutes = (m: number) => m * 60_000;
+const DAY_MS = 86_400_000;
 
 export function generateTransactions(): SyntheticTransaction[] {
   const rng = new Rng(SEED);
@@ -156,6 +170,9 @@ export function generateTransactions(): SyntheticTransaction[] {
   const evidenceIdx = take(DEFECT_SPEC.missing_evidence);
   const pendingIdx = take(N_PENDING);
   const originalIdx = take(DEFECT_SPEC.duplicate_transaction); // clean originals for duplicates
+  // Taken last and set without the RNG, so every other transaction is unchanged.
+  const coveredIdx = take(COVERED_AMOUNTS.length);
+  const structuringIdx = STRUCTURING_GROUPS.map((g) => take(g.length));
 
   for (const idx of settlementIdx) {
     const t = txns[idx];
@@ -213,6 +230,33 @@ export function generateTransactions(): SyntheticTransaction[] {
       settlement_timestamp: null, payout_timestamp: null,
     });
   }
+
+  // Fully settled and reconciled, so only the AML control (CTRL-003) flags them.
+  const setAmount = (t: SyntheticTransaction, amount: number) => {
+    const payout = round2(amount * (1 - FEE_RATE));
+    Object.assign(t, {
+      transaction_amount: amount, processor_amount: amount, expected_settlement: amount, actual_settlement: amount,
+      expected_payout: payout, actual_payout: payout,
+    });
+  };
+  coveredIdx.forEach((idx, k) => {
+    setAmount(txns[idx], COVERED_AMOUNTS[k]);
+    txns[idx].risk_status = 'MEDIUM';
+  });
+  structuringIdx.forEach((group, g) => {
+    const first = txns[group[0]];
+    // Start of the first transaction's day in Manila (UTC+8), then 09:15, 13:40 and 17:05 local time.
+    const manilaDay = Math.floor((first.transaction_timestamp.getTime() + 8 * 3_600_000) / DAY_MS) * DAY_MS - 8 * 3_600_000;
+    group.forEach((idx, k) => {
+      const t = txns[idx];
+      const ts = new Date(manilaDay + minutes([555, 820, 1025][k]));
+      setAmount(t, STRUCTURING_GROUPS[g][k]);
+      Object.assign(t, {
+        merchant_id: first.merchant_id, risk_status: 'HIGH', transaction_timestamp: ts, created_at: ts,
+        settlement_timestamp: new Date(ts.getTime() + minutes(120)), payout_timestamp: new Date(ts.getTime() + minutes(24 * 60)),
+      });
+    });
+  });
 
   return txns;
 }

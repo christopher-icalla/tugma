@@ -4,7 +4,7 @@ import { config, DEMO_ORG_ID } from '../config';
 import { EngineService } from '../engine/engine.service';
 import { PrismaService } from '../prisma.service';
 import { newChainOrgId } from '../stellar/chain-org';
-import { generateTransactions, TOTAL } from './dataset';
+import { COVERED_AMOUNTS, COVERED_THRESHOLD, generateTransactions, TOTAL } from './dataset';
 import {
   CONTROL_TESTS, CONTROLS, DEMO_USERS, organization, REGULATORY_REQUIREMENTS, regulatorySources, vendors,
 } from './reference-data';
@@ -100,10 +100,15 @@ export class SeedService {
     }
   }
 
-  /** (Re)generate the dataset only when the table doesn't hold exactly 10,000 rows. */
+  /**
+   * (Re)generate the dataset when the table doesn't hold exactly 10,000 rows,
+   * or holds an older generation without the AMLC covered transactions.
+   */
   async ensureDataset(): Promise<boolean> {
-    const count = await this.prisma.paymentTransaction.count({ where: { organization_id: DEMO_ORG_ID } });
-    if (count === TOTAL) return false;
+    const org = { organization_id: DEMO_ORG_ID };
+    const count = await this.prisma.paymentTransaction.count({ where: org });
+    const covered = await this.prisma.paymentTransaction.count({ where: { ...org, transaction_amount: { gt: COVERED_THRESHOLD } } });
+    if (count === TOTAL && covered === COVERED_AMOUNTS.length) return false;
     const txns = generateTransactions();
     await this.prisma.$transaction(async (tx) => {
       await tx.paymentTransaction.deleteMany({ where: { organization_id: DEMO_ORG_ID } });

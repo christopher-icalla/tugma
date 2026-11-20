@@ -81,11 +81,30 @@ describe('auth', () => {
 describe('control engine results', () => {
   it('reports the dashboard KPIs derived from the 10k dataset', async () => {
     const { body } = await agents.admin.get('/api/dashboard/summary');
-    expect(body.kpis).toMatchObject({ transactions_analyzed: 10000, controls_tested: 5, exceptions: 122, high_risk: 72 });
+    expect(body.kpis).toMatchObject({ transactions_analyzed: 10000, controls_tested: 5, exceptions: 132, high_risk: 78 });
     const by = Object.fromEntries(body.control_health.map((c: { control_code: string }) => [c.control_code, c]));
     expect(by['CTRL-005']).toMatchObject({ records_tested: 10000, failed_count: 82, not_testable_count: 150 });
     expect(by['CTRL-002']).toMatchObject({ failed_count: 30 });
     expect(by['CTRL-004']).toMatchObject({ warning_count: 10 });
+    expect(by['CTRL-003']).toMatchObject({ records_tested: 10000, warning_count: 4, failed_count: 6, passed_count: 9990, not_testable_count: 0 });
+  });
+
+  it('flags AMLC covered transactions and structuring', async () => {
+    const covered = await agents.admin.get('/api/transactions?control=CTRL-003&test_status=WARNING&page_size=100');
+    expect(covered.body.total).toBe(4);
+    for (const t of covered.body.transactions) expect(t.transaction_amount).toBeGreaterThan(500000);
+
+    const split = await agents.admin.get('/api/transactions?control=CTRL-003&test_status=FAIL&page_size=100');
+    expect(split.body.total).toBe(6);
+    const tx = split.body.transactions[0];
+    const { body } = await agents.admin.get(`/api/exceptions/EXC-CTRL-003-${tx.transaction_id}`);
+    expect(body.exception).toMatchObject({ defect_type: 'possible_structuring', severity: 'HIGH' });
+    expect(body.exception.explanation.actual).toMatch(new RegExp(`^3 transactions for ${tx.merchant_id} on \\d{4}-\\d{2}-\\d{2} totalling PHP 1,4\\d\\d,\\d{3}\\.\\d{2}`));
+    const detail = await agents.admin.get(`/api/transactions/${tx.transaction_id}`);
+    expect(detail.body.control_results).toContainEqual({ control_code: 'CTRL-003', result: 'FAIL' });
+    const one = await agents.admin.get(`/api/transactions/${covered.body.transactions[0].transaction_id}`);
+    expect(one.body.control_results).toContainEqual({ control_code: 'CTRL-003', result: 'WARNING' });
+    expect(one.body.transaction.test_status).toBe('WARNING');
   });
 
   it('explains the hero exception', async () => {

@@ -12,7 +12,8 @@ import { PaymentTransaction, Prisma } from '@prisma/client';
 import { DEMO_ORG_ID } from '../config';
 import { php, sha256, shortId } from '../common/util';
 import { PrismaService } from '../prisma.service';
-import { HERO_TX } from '../seed/dataset';
+import { COVERED_THRESHOLD, HERO_TX } from '../seed/dataset';
+import { amlScreen } from './aml';
 
 export const TOLERANCE = 0.01; // PHP — CTRL-005 configured tolerance
 
@@ -22,7 +23,9 @@ type Defect =
   | 'duplicate_transaction'
   | 'missing_approval'
   | 'segregation_of_duty'
-  | 'missing_evidence';
+  | 'missing_evidence'
+  | 'covered_transaction'
+  | 'possible_structuring';
 
 const SEVERITY_OF: Record<Defect, 'HIGH' | 'MEDIUM'> = {
   settlement_discrepancy: 'HIGH',
@@ -31,6 +34,8 @@ const SEVERITY_OF: Record<Defect, 'HIGH' | 'MEDIUM'> = {
   missing_approval: 'MEDIUM',
   segregation_of_duty: 'HIGH',
   missing_evidence: 'MEDIUM',
+  covered_transaction: 'MEDIUM',
+  possible_structuring: 'HIGH',
 };
 
 /** 5-state workflow spread for freshly detected demo exceptions (TX-847291 is forced OPEN). */
@@ -164,9 +169,28 @@ export class EngineService {
       bump('CTRL-001', v.due_diligence_status === 'CURRENT' ? 'passed_count' : 'warning_count');
     }
 
-    // ---- CTRL-003 AML/CTPF Control Evidence (program evidence absent) ----
-    bump('CTRL-003', 'records_tested');
-    bump('CTRL-003', 'not_testable_count');
+    // ---- CTRL-003 AMLC covered transactions and structuring --------------
+    const aml = amlScreen(txns.map((t) => ({
+      transaction_id: t.transaction_id, merchant_id: t.merchant_id,
+      amount: t.transaction_amount.toNumber(), timestamp: t.transaction_timestamp,
+    })));
+    for (const t of txns) {
+      bump('CTRL-003', 'records_tested');
+      const f = aml.get(t.transaction_id);
+      if (!f) {
+        bump('CTRL-003', 'passed_count');
+      } else if (f.defect === 'covered_transaction') {
+        fail('CTRL-003', t, 'covered_transaction', explain(
+          'Covered transaction', `At most ${php(COVERED_THRESHOLD)} without a CTR`, php(f.amount), null, 'WARNING',
+          'A single transaction above the AMLC covered-transaction threshold. File a Covered Transaction Report with the AMLC within five working days and attach the filing as evidence.'));
+      } else {
+        fail('CTRL-003', t, 'possible_structuring', explain(
+          'Possible structuring', `No same-day split below ${php(COVERED_THRESHOLD)}`,
+          `${f.count} transactions for ${f.merchant_id} on ${f.date} totalling ${php(f.total)} (with ${f.with.join(', ')})`,
+          null, 'FAILED',
+          'Several same-day transactions for one merchant, each just below the covered-transaction threshold, together exceed it. Review for structuring and decide whether a Suspicious Transaction Report is required.'));
+      }
+    }
 
     const completed = new Date();
     const controls = await this.prisma.control.findMany({ where: { organization_id: orgId } });
@@ -244,9 +268,10 @@ export class EngineService {
       where: { organization_id: orgId, payment_status: { not: 'SETTLED' } },
       data: { test_status: 'NOT_TESTABLE' },
     }));
-    const flags = new Map<string, { controls: Set<string>; defects: Set<string>; severity: string }>();
+    const flags = new Map<string, { controls: Set<string>; defects: Set<string>; severity: string; warningOnly: boolean }>();
     for (const f of findings) {
-      const entry = flags.get(f.tx.transaction_id) ?? { controls: new Set(), defects: new Set(), severity: 'NORMAL' };
+      const entry = flags.get(f.tx.transaction_id) ?? { controls: new Set(), defects: new Set(), severity: 'NORMAL', warningOnly: true };
+      entry.warningOnly &&= f.explanation.result === 'WARNING';
       entry.controls.add(f.code);
       entry.defects.add(f.defect);
       const sev = SEVERITY_OF[f.defect];
@@ -259,7 +284,7 @@ export class EngineService {
         where: { transaction_id },
         data: {
           has_exception: true, failed_controls: failed, defect_types: [...f.defects].sort(),
-          test_status: failed.length === 1 && failed[0] === 'CTRL-004' ? 'WARNING' : 'FAIL',
+          test_status: f.warningOnly ? 'WARNING' : 'FAIL',
           exception_severity: f.severity,
         },
       }));

@@ -65,13 +65,16 @@ export class TransactionsController {
       take: 50,
     });
     // Reconstruct which controls evaluated this transaction and their result.
-    const control_results = ['CTRL-005', 'CTRL-002', 'CTRL-004'].map((code) => {
+    // CTRL-004 and a CTRL-003 covered transaction are warnings; everything else that fails is a FAIL.
+    const warning = (code: string) =>
+      code === 'CTRL-004' || (code === 'CTRL-003' && !transaction.defect_types.includes('possible_structuring'));
+    const control_results = ['CTRL-005', 'CTRL-002', 'CTRL-004', 'CTRL-003'].map((code) => {
       const failed = transaction.failed_controls.includes(code);
       const result =
         code === 'CTRL-005' && transaction.payment_status !== 'SETTLED'
           ? 'NOT_TESTABLE'
           : failed
-            ? code === 'CTRL-004' ? 'WARNING' : 'FAIL'
+            ? warning(code) ? 'WARNING' : 'FAIL'
             : 'PASS';
       return { control_code: code, result };
     });
