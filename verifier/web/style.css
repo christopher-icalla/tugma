@@ -49,3 +49,12 @@ h3 { font-size: 1rem; margin: 18px 0 6px; }
 .versions li { padding: 6px 0; border-top: 1px solid var(--line); color: var(--muted); }
 .versions li.current { color: var(--ok); }
 .versions .hash { display: block; font-size: 0.75rem; }
+.batch { margin-top: 16px; }
+.batch .row { border-top: 1px solid var(--line); padding: 8px 0; }
+.batch summary { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; cursor: pointer; }
+.batch .badge { font: 700 0.75rem ui-monospace, Consolas, monospace; min-width: 8.5em; }
+.batch .ok .badge { color: var(--ok); }
+.batch .fail .badge { color: var(--bad); }
+.batch .name { color: var(--text); }
+.batch .line { color: var(--muted); font-size: 0.85rem; flex-basis: 100%; padding-left: calc(8.5em + 12px); }
+@media (max-width: 560px) { .batch .line { padding-left: 0; } }

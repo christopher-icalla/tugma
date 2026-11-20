@@ -19,7 +19,7 @@ test("the page loads the pinned SDK version with an integrity hash", () => {
 });
 
 test("the page and its scripts never reference TUGMA's API", () => {
-  for (const f of ["../web/index.html", "../web/app.js", "../web/view.js", "../src/chain.js", "../src/verify.js"]) {
+  for (const f of ["../web/index.html", "../web/app.js", "../web/view.js", "../src/chain.js", "../src/verify.js", "../src/bulk.js"]) {
     assert.doesNotMatch(read(f), /\/api\/|REACT_APP_BACKEND_URL|tugma\.(ph|app|io)/i, f);
   }
 });
@@ -60,4 +60,33 @@ test("a ?hash= link must match the dropped file", async () => {
   const other = viewModel(result, undefined, "f".repeat(64));
   assert.equal(other.valid, false);
   assert.equal(other.title, "NOT THE LINKED PACKAGE");
+});
+
+test("batch view model: one row per file, expandable details", async () => {
+  const { verifyMany } = await import("../src/bulk.js");
+  const { batchViewModel } = await import("../web/view.js");
+  const chain = fakeChain();
+  const pkg = await exportedPackage();
+  chain.attest(pkg);
+  const tampered = structuredClone(pkg);
+  tampered.manifest.controls.pop();
+
+  const bvm = batchViewModel(await verifyMany([
+    { name: "good.json", bundle: pkg },
+    { name: "bad.json", bundle: tampered },
+    { name: "junk.json", error: "not valid JSON" },
+  ], chain));
+  assert.equal(bvm.valid, false);
+  assert.equal(bvm.title, "1 OF 3 VALID");
+  assert.deepEqual(bvm.rows.map((r) => [r.name, r.valid, r.title]), [
+    ["good.json", true, "VALID"],
+    ["bad.json", false, "NOT VALID: TAMPERED"],
+    ["junk.json", false, "NOT VALID: INVALID FILE"],
+  ]);
+  assert.ok(bvm.rows[0].vm.details.length);
+  assert.equal(bvm.rows[2].vm, null);
+});
+
+test("the file input accepts several files", () => {
+  assert.match(read("../web/index.html"), /<input id="file" type="file"[^>]* multiple>/);
 });

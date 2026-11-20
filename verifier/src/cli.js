@@ -1,9 +1,12 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { join } from "node:path";
+import { describeRow, verifyMany } from "./bulk.js";
 import { verifyEvidence } from "./evidence.js";
 import { verifyPackage } from "./verify.js";
 
 export const USAGE = `Usage: tugma-verify <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify evidence <evidence.json> --package <package.json> [--json] [--rpc <url>] [--contract <C...>]
+       tugma-verify batch <file-or-folder>... [--json] [--rpc <url>] [--contract <C...>]
 
 Checks an exported TUGMA evidence package against the Stellar Testnet
 attestation contract through Soroban RPC. It never calls TUGMA's API.
@@ -15,6 +18,9 @@ attestation contract through Soroban RPC. It never calls TUGMA's API.
 
 "evidence" checks one exported evidence record: its content hash, its line in
 the package manifest, and the package on Stellar.
+
+"batch" checks many packages at once (every .json file in a folder, or the
+files named) and prints one line per file. It exits 0 only if all are valid.
 
 Exit codes: 0 valid, 1 not valid (tampered, not attested, mismatch or bad signature),
 2 bad input, 3 the network could not be reached.`;
@@ -32,10 +38,11 @@ const SUMMARY = {
 
 export function parseArgs(argv) {
   const opts = { json: false, file: null, rpcUrl: undefined, contractId: undefined };
-  if (argv[0] === "evidence") {
-    opts.mode = "evidence";
+  if (argv[0] === "evidence" || argv[0] === "batch") {
+    opts.mode = argv[0];
     argv = argv.slice(1);
   }
+  if (opts.mode === "batch") opts.files = [];
   const KEYS = { "--rpc": "rpcUrl", "--contract": "contractId", "--package": "packageFile" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -46,10 +53,12 @@ export function parseArgs(argv) {
       opts[KEYS[a]] = v;
     } else if (a === "-h" || a === "--help") opts.help = true;
     else if (a.startsWith("-")) throw new Error(`Unknown option ${a}`);
+    else if (opts.files) opts.files.push(a);
     else if (opts.file) throw new Error("Give exactly one package file");
     else opts.file = a;
   }
   if (opts.mode === "evidence" && opts.file && !opts.packageFile) throw new Error("evidence needs --package <package.json>");
+  if (opts.files) opts.file = opts.files[0] ?? null;
   if (opts.mode !== "evidence" && opts.packageFile) throw new Error("--package is only for the evidence command");
   return opts;
 }
@@ -122,6 +131,8 @@ export async function main(argv, deps) {
     return EXIT.USAGE;
   }
 
+  if (opts.mode === "batch") return runBatch(opts, deps, out, err);
+
   const load = async (file) => JSON.parse(await (deps.readFile ?? readFile)(file, "utf8"));
   let first;
   let bundle;
@@ -147,4 +158,74 @@ export async function main(argv, deps) {
   const text = opts.mode === "evidence" ? formatEvidenceResult(result) : formatResult(result);
   out(opts.json ? JSON.stringify(result, null, 2) : text);
   return EXIT[result.status];
+}
+
+const BATCH_LABEL = {
+  VALID: "VALID",
+  TAMPERED: "TAMPERED",
+  NOT_ATTESTED: "NOT ATTESTED",
+  MISMATCH: "MISMATCH",
+  BAD_SIGNATURE: "BAD SIGNATURE",
+  INVALID_FILE: "INVALID FILE",
+};
+
+/** Human-readable table of a verifyMany() result. */
+export function formatBatch(b) {
+  const width = Math.max(4, ...b.rows.map((r) => r.name.length));
+  const lines = [
+    b.all_valid
+      ? `All ${b.total} package(s) are VALID.`
+      : `${b.valid} of ${b.total} package(s) are VALID; ${b.total - b.valid} NOT VALID.`,
+    "",
+  ];
+  for (const r of b.rows) {
+    lines.push(`  ${(r.valid ? "[ok]  " : "[FAIL]")} ${r.name.padEnd(width)}  ${BATCH_LABEL[r.status].padEnd(13)}  ${describeRow(r)}`);
+  }
+  const rest = Object.entries(b.counts).filter(([k]) => k !== "VALID").map(([k, n]) => `${n} ${BATCH_LABEL[k]}`);
+  if (rest.length) lines.push("", `  Not valid: ${rest.join(", ")}`);
+  return lines.join("\n");
+}
+
+/** Every .json file named, or inside a folder named (not recursive), sorted. */
+async function expandPaths(paths, fs) {
+  const files = [];
+  for (const p of paths) {
+    if ((await fs.stat(p)).isDirectory()) {
+      const names = (await fs.readdir(p)).filter((n) => n.toLowerCase().endsWith(".json")).sort();
+      files.push(...names.map((n) => join(p, n)));
+    } else files.push(p);
+  }
+  return files;
+}
+
+async function runBatch(opts, deps, out, err) {
+  const fs = { stat: deps.stat ?? stat, readdir: deps.readdir ?? readdir };
+  let files;
+  try {
+    files = await expandPaths(opts.files, fs);
+  } catch (e) {
+    err(`Cannot read ${e.path ?? "input"}: ${e.message}`);
+    return EXIT.USAGE;
+  }
+  if (!files.length) {
+    err("No .json files found.");
+    return EXIT.USAGE;
+  }
+  const entries = [];
+  for (const name of files) {
+    try {
+      entries.push({ name, bundle: JSON.parse(await (deps.readFile ?? readFile)(name, "utf8")) });
+    } catch (e) {
+      entries.push({ name, error: `not readable as JSON (${e.message})` });
+    }
+  }
+  let batch;
+  try {
+    batch = await verifyMany(entries, deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId }));
+  } catch (e) {
+    err(`Could not reach Soroban RPC: ${e.message}`);
+    return EXIT.NETWORK;
+  }
+  out(opts.json ? JSON.stringify(batch, null, 2) : formatBatch(batch));
+  return batch.all_valid ? 0 : 1;
 }

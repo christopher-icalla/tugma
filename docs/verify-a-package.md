@@ -36,6 +36,20 @@ node bin/tugma-verify.js ~/Downloads/tugma-pkg-2026-01-01-2026-03-31.json
 
 Options: `--json` for machine-readable output, `--rpc <url>` to use another Soroban RPC provider, `--contract <C…>` to check a different contract. Exit codes: `0` valid, `1` not valid, `2` bad input, `3` network unreachable.
 
+To check many packages at once, for example every quarter an auditor received, pass a folder or several files to `batch`. It prints one line per file and exits `0` only if every file is valid:
+
+```bash
+node bin/tugma-verify.js batch ~/Downloads/tugma-packages/
+```
+
+```text
+1 of 3 package(s) are VALID; 2 NOT VALID.
+
+  [ok]   tugma-pkg-2026-01-01-2026-03-31.json  VALID          pkg-2026-01-01-2026-03-31 v1 of 1, countersigned
+  [FAIL] tugma-pkg-2026-04-01-2026-06-30.json  TAMPERED       Canonical form: canonical_manifest differs from the canonical form of the manifest
+  [FAIL] notes.json                            INVALID FILE   not readable as JSON (…)
+```
+
 ## 2b. Verify in a browser
 
 **Hosted:** https://christopher-icalla.github.io/tugma/verifier/web/ is published from this repository on GitHub Pages by [`jekyll-gh-pages.yml`](../.github/workflows/jekyll-gh-pages.yml), so it does not depend on any TUGMA server.
@@ -47,7 +61,7 @@ cd verifier
 npm run web        # serves http://localhost:8787/web/
 ```
 
-Open the page and drop the file on it. The file is read and hashed inside the browser and is never uploaded anywhere. The page talks only to the Soroban RPC endpoint shown under **Network settings** and to the CDN that serves the pinned Stellar SDK (checked with a Subresource Integrity hash). `verifier/web/` is plain static files, so it can also be hosted on any static host.
+Open the page and drop the file on it, or drop several files to check them together and get one row per file. The file is read and hashed inside the browser and is never uploaded anywhere. The page talks only to the Soroban RPC endpoint shown under **Network settings** and to the CDN that serves the pinned Stellar SDK (checked with a Subresource Integrity hash). `verifier/web/` is plain static files, so it can also be hosted on any static host.
 
 ## What the verifier checks
 

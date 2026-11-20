@@ -3,6 +3,8 @@
  * DOM code so it can be tested in Node; app.js renders the rows with
  * textContent only, so nothing from the file is ever parsed as HTML.
  */
+import { describeRow } from "../src/bulk.js";
+
 const HEADLINE = {
   VALID: ["VALID", "This package is the one attested on Stellar."],
   TAMPERED: ["NOT VALID: TAMPERED", "The package was changed after it was exported."],
@@ -62,5 +64,30 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
     warnings: result.warnings,
     limitation: result.limitation,
     contractLink: `${explorerUrl}/contract/${encodeURIComponent(result.contract_id)}`,
+  };
+}
+
+/**
+ * Rows for checking several files at once (verifyMany() result). Each row
+ * carries the full view model of its file so the page can expand it.
+ */
+export function batchViewModel(batch, explorerUrl) {
+  const rows = batch.rows.map((r) => {
+    const vm = r.result ? viewModel(r.result, explorerUrl) : null;
+    return {
+      name: r.name,
+      valid: r.valid,
+      title: vm ? vm.title : "NOT VALID: INVALID FILE",
+      line: describeRow(r),
+      vm,
+    };
+  });
+  return {
+    valid: batch.all_valid,
+    title: batch.all_valid ? `ALL ${batch.total} VALID` : `${batch.valid} OF ${batch.total} VALID`,
+    summary: batch.all_valid
+      ? "Every file is a package attested on Stellar."
+      : `${batch.total - batch.valid} file(s) did not verify. Open a row for its checks.`,
+    rows,
   };
 }
