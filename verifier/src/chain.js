@@ -55,6 +55,39 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
     async isSigner(org, address) {
       return Boolean(await read("is_signer", str(org), new sdk.Address(address).toScVal()));
     },
+    /**
+     * Signer additions and removals for `org` from the contract's
+     * `signer_changed` events, oldest first. Soroban RPC keeps events for a
+     * limited window (about seven days on Testnet), so `from_ledger` says how
+     * far back the list goes; older changes are not visible this way.
+     */
+    async signerChanges(org, { maxPages = 10 } = {}) {
+      const health = await withRetry(() => rpcServer.getHealth());
+      const fromLedger = Number(health.oldestLedger) + 1;
+      const filters = [{
+        type: "contract",
+        contractIds: [contractId],
+        topics: [[sdk.xdr.ScVal.scvSymbol("signer_changed").toXDR("base64"), str(org).toXDR("base64")]],
+      }];
+      const changes = [];
+      let cursor;
+      for (let page = 0; page < maxPages; page++) {
+        const res = await withRetry(() => rpcServer.getEvents(cursor ? { filters, cursor, limit: 100 } : { startLedger: fromLedger, filters, limit: 100 }));
+        for (const ev of res.events ?? []) {
+          const data = sdk.scValToNative(ev.value);
+          changes.push({
+            signer: String(data.signer),
+            authorized: Boolean(data.authorized),
+            ledger: Number(ev.ledger),
+            at: ev.ledgerClosedAt ? new Date(ev.ledgerClosedAt).toISOString() : null,
+            tx_hash: ev.txHash ?? null,
+          });
+        }
+        if (!res.events?.length || res.events.length < 100 || !res.cursor) break;
+        cursor = res.cursor;
+      }
+      return { from_ledger: fromLedger, latest_ledger: Number(health.latestLedger), changes };
+    },
     /** SEP-53: was `message` signed by the Stellar account `address`? (signature in base64) */
     verifySignedMessage(address, message, signatureB64) {
       try {

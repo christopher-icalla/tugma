@@ -2,12 +2,14 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { describeRow, verifyMany } from "./bulk.js";
 import { diffPackages } from "./diff.js";
+import { auditSigners } from "./signers.js";
 import { verifyEvidence } from "./evidence.js";
 import { verifyPackage } from "./verify.js";
 
 export const USAGE = `Usage: tugma-verify <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify evidence <evidence.json> --package <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify batch <file-or-folder>... [--json] [--rpc <url>] [--contract <C...>]
+       tugma-verify signers <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify diff <old-package.json> <new-package.json> [--json] [--offline] [--rpc <url>] [--contract <C...>]
 
 Checks an exported TUGMA evidence package against the Stellar Testnet
@@ -29,6 +31,11 @@ evidence whose content hash changed, and the period and counts. It also
 looks up which on-chain version each file is (skip with --offline). It exits
 0 if the manifests are identical and 1 if they differ.
 
+"signers" audits who attested and who countersigned every on-chain version of
+the package the file names, whether each wallet is still an authorized signer,
+and recent signer changes. It exits 1 if any version is not countersigned or
+was countersigned by its own attester.
+
 Exit codes: 0 valid, 1 not valid (tampered, not attested, mismatch or bad signature),
 2 bad input, 3 the network could not be reached.`;
 
@@ -45,7 +52,7 @@ const SUMMARY = {
 
 export function parseArgs(argv) {
   const opts = { json: false, file: null, rpcUrl: undefined, contractId: undefined };
-  if (["evidence", "batch", "diff"].includes(argv[0])) {
+  if (["evidence", "batch", "diff", "signers"].includes(argv[0])) {
     opts.mode = argv[0];
     argv = argv.slice(1);
   }
@@ -142,6 +149,7 @@ export async function main(argv, deps) {
 
   if (opts.mode === "batch") return runBatch(opts, deps, out, err);
   if (opts.mode === "diff") return runDiff(opts, deps, out, err);
+  if (opts.mode === "signers") return runSigners(opts, deps, out, err);
 
   const load = async (file) => JSON.parse(await (deps.readFile ?? readFile)(file, "utf8"));
   let first;
@@ -295,4 +303,61 @@ async function runDiff(opts, deps, out, err) {
   }
   out(opts.json ? JSON.stringify(d, null, 2) : formatDiff(d, opts.files));
   return d.identical ? 0 : 1;
+}
+
+/** Human-readable report of an auditSigners() result. */
+export function formatSigners(a) {
+  if (!a.version_count) return `NO VERSIONS: ${a.package_id} has no attestation on contract ${a.contract_id}.`;
+  const lines = [
+    a.ok
+      ? `OK: all ${a.versions.length} version(s) of ${a.package_id} were countersigned by a different wallet.`
+      : `ATTENTION: ${a.problems.length} problem(s) in the signing history of ${a.package_id}.`,
+    "",
+    `  Organization ${a.org}`,
+    `  Contract     ${a.contract_id} (Stellar Testnet)`,
+    "",
+    "  Version history (oldest first):",
+  ];
+  if (a.omitted) lines.push(`    … ${a.omitted} older version(s) not shown`);
+  for (const v of a.versions) {
+    lines.push(`    ${v.issues.length ? "[FAIL]" : "[ok]  "} v${v.version}  attested ${v.attested_at} by ${v.attester}`);
+    lines.push(`                 ${v.verifier ? `countersigned ${v.verified_at} by ${v.verifier}` : "not countersigned"}`);
+    for (const i of v.issues) lines.push(`                 problem: ${i}`);
+  }
+  lines.push("", "  Wallets:");
+  for (const w of a.wallets) {
+    const did = [w.attested.length && `attested v${w.attested.join(", v")}`, w.countersigned.length && `countersigned v${w.countersigned.join(", v")}`].filter(Boolean).join("; ");
+    lines.push(`    ${w.address}  ${w.authorized_now ? "authorized now" : "NOT authorized now"}  (${did})`);
+  }
+  const sc = a.signer_changes;
+  if (sc) {
+    lines.push("", `  Signer changes since ledger ${sc.from_ledger} (the RPC's retention window):`);
+    if (!sc.changes.length) lines.push("    none");
+    for (const c of sc.changes) lines.push(`    ${c.at ?? `ledger ${c.ledger}`}  ${c.authorized ? "added  " : "removed"}  ${c.signer}${c.tx_hash ? `  tx ${c.tx_hash}` : ""}`);
+  }
+  for (const n of a.notes) lines.push(`  Note: ${n}`);
+  return lines.join("\n");
+}
+
+async function runSigners(opts, deps, out, err) {
+  let bundle;
+  try {
+    bundle = JSON.parse(await (deps.readFile ?? readFile)(opts.file, "utf8"));
+  } catch (e) {
+    err(`Cannot read ${opts.file} as JSON: ${e.message}`);
+    return EXIT.USAGE;
+  }
+  if (typeof bundle?.org !== "string" || typeof bundle?.package_id !== "string") {
+    err("The file does not name an organization and package (org, package_id).");
+    return EXIT.USAGE;
+  }
+  let audit;
+  try {
+    audit = await auditSigners(deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId }), bundle.org, bundle.package_id);
+  } catch (e) {
+    err(`Could not reach Soroban RPC: ${e.message}`);
+    return EXIT.NETWORK;
+  }
+  out(opts.json ? JSON.stringify(audit, null, 2) : formatSigners(audit));
+  return audit.ok ? 0 : 1;
 }

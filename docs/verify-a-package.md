@@ -71,6 +71,12 @@ DIFFERENT: the packages' manifests differ.
     ~ evd-0a1b2c3d4e  content hash 9f86d081884c7d65… -> 4e07408562bedb8b…
 ```
 
+To audit who signed a package, use `signers`. For every on-chain version of the package the file names, it lists the attesting and countersigning wallets with timestamps, whether each wallet is still an authorized signer for the organization, and signer additions and removals that the RPC still holds (`signer_changed` events; Soroban RPC keeps about seven days on Testnet). It exits `1` if any version is not countersigned or was countersigned by its own attester:
+
+```bash
+node bin/tugma-verify.js signers tugma-pkg-2026-01-01-2026-03-31.json
+```
+
 ## 2b. Verify in a browser
 
 **Hosted:** https://christopher-icalla.github.io/tugma/verifier/web/ is published from this repository on GitHub Pages by [`jekyll-gh-pages.yml`](../.github/workflows/jekyll-gh-pages.yml), so it does not depend on any TUGMA server.

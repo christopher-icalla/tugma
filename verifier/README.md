@@ -9,6 +9,7 @@ npm ci
 node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json   # command line
 node bin/tugma-verify.js batch ./packages/                      # many packages at once
 node bin/tugma-verify.js diff v1.json v2.json                   # what changed between two packages
+node bin/tugma-verify.js signers pkg.json                       # who attested and countersigned each version
 npm run web                                                      # browser: http://localhost:8787/web/
 npm run demo                                                     # valid vs. modified package, offline
 npm test
@@ -21,6 +22,7 @@ npm test
 | `src/verify.js` | The checks and results |
 | `src/bulk.js` | Checking many packages at once |
 | `src/diff.js` | Comparing two packages |
+| `src/signers.js` | Signer history audit |
 | `src/cli.js`, `bin/tugma-verify.js` | Command line |
 | `web/` | Browser page (static files) |
 | `test/vectors.json` | Test vectors shared with the backend |
