@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import AttestationPanel from "@/components/app/AttestationPanel";
 import DownloadPackageButton from "@/components/app/DownloadPackageButton";
 import PackageQr from "@/components/app/PackageQr";
+import PackageTimeline from "@/components/app/PackageTimeline";
 
 export default function Reports() {
   const { user } = useAuth();
@@ -94,6 +95,7 @@ export default function Reports() {
                 </div>
                 <AttestationPanel pkg={p} stellarConfig={stellarConfig} onChange={load} />
               </div>
+              <PackageTimeline pkg={p} />
             </Card>
           ))}
         </div>

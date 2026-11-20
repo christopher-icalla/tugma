@@ -536,3 +536,24 @@ describe('daily schedule', () => {
     expect(after.kpis.exceptions).toBe(132);
   });
 });
+
+describe('package timeline', () => {
+  it('lists a package history with Stellar links for on-chain events', async () => {
+    const prisma = app.get(PrismaService);
+    const attested = await prisma.stellarAttestation.findFirst({ where: { organization_id: DEMO_ORG_ID }, orderBy: { submitted_at: 'asc' } });
+    const pkgId = attested?.evidence_package_id ?? (await prisma.evidencePackage.findFirst({ where: { organization_id: DEMO_ORG_ID } }))!.id;
+
+    const { status, body } = await agents.auditor.get(`/api/evidence-packages/${pkgId}/timeline`);
+    expect(status).toBe(200);
+    const kinds = body.events.map((e: { kind: string }) => e.kind);
+    expect(kinds[0]).toBe('generated');
+    const times = body.events.map((e: { at: string }) => e.at);
+    expect(times).toEqual([...times].sort());
+    if (attested) {
+      const ev = body.events.find((e: { kind: string; tx_hash: string }) => e.kind === 'attested' && e.tx_hash === attested.transaction_hash);
+      expect(ev).toMatchObject({ ledger: attested.ledger });
+      if (attested.transaction_hash) expect(ev.link).toMatch(new RegExp(`/tx/${attested.transaction_hash}$`));
+    }
+    expect((await agents.auditor.get('/api/evidence-packages/does-not-exist/timeline')).status).toBe(404);
+  });
+});

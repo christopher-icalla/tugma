@@ -123,6 +123,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 - **Version history.** The verifier lists every attested version of a package and marks the one the file matches.
 - **Per-document proofs.** One evidence record can be checked against its line in a package, without sharing any other document.
 - **Verify links and QR codes.** The public `/stellar` page links to the verifier, and every finalized package carries a QR code with its id and SHA-256 for printed audit reports.
+- **Package timeline.** Each package shows when it was generated, attested and countersigned on Stellar (with ledger and transaction links), downloaded and synced, and by whom.
 - **Append-only audit trail.** Every write is logged, and no route exists to edit or delete audit entries.
 - **Role-based access control.** Seven roles, enforced on the server and mirrored in the UI.
 

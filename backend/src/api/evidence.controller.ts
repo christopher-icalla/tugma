@@ -6,11 +6,13 @@ import type { Response } from 'express';
 import { z } from 'zod';
 import { CurrentUser, PublicUser, RequirePerm } from '../auth/auth.guard';
 import { AuditService } from '../common/audit.service';
+import { config } from '../config';
 import { canonicalJson, isoDay, parse, sha256, shortId } from '../common/util';
 import { PrismaService } from '../prisma.service';
 import { AttestationService } from '../stellar/attestation.service';
 import { buildEvidenceExport, evidenceFileName, EvidenceNotExportableError, evidenceHashInput } from './evidence-export';
 import { buildPackageExport, exportFileName, PackageNotExportableError } from './package-export';
+import { buildTimeline } from './package-timeline';
 
 const optional = z.string().nullish();
 const EvidenceInput = z.object({
@@ -209,6 +211,19 @@ export class EvidenceController {
     const pkg = await this.prisma.evidencePackage.findFirst({ where: { id, organization_id: user.organization_id } });
     if (!pkg) throw new NotFoundException('Package not found.');
     return { package: (await this.attestations.decorate([pkg]))[0] };
+  }
+
+  /** Generated, attested, countersigned, downloaded and synced, in time order, with Stellar transaction links. */
+  @Get('evidence-packages/:id/timeline')
+  async packageTimeline(@Param('id') id: string, @CurrentUser() user: PublicUser) {
+    const orgId = user.organization_id;
+    const pkg = await this.prisma.evidencePackage.findFirst({ where: { id, organization_id: orgId } });
+    if (!pkg) throw new NotFoundException('Package not found.');
+    const [audits, attestations] = await Promise.all([
+      this.prisma.auditLog.findMany({ where: { organization_id: orgId, entity_type: 'evidence_package', entity_id: id }, orderBy: { timestamp: 'asc' }, take: 500 }),
+      this.prisma.stellarAttestation.findMany({ where: { organization_id: orgId, evidence_package_id: id }, orderBy: { version: 'asc' } }),
+    ]);
+    return { package_id: id, events: buildTimeline(pkg, audits, attestations, config().STELLAR_EXPLORER_URL) };
   }
 
   /**
