@@ -50,6 +50,27 @@ node bin/tugma-verify.js batch ~/Downloads/tugma-packages/
   [FAIL] notes.json                            INVALID FILE   not readable as JSON (…)
 ```
 
+To see what changed between two packages, for example version 1 and a re-attested version 2, use `diff`. It recomputes both hashes, says which on-chain version each file is, and lists entries added or removed, evidence whose content hash changed, and changes to the period and counts. Add `--offline` to compare without reading Stellar. It exits `0` if the manifests are identical and `1` if they differ:
+
+```bash
+node bin/tugma-verify.js diff tugma-pkg-v1.json tugma-pkg-v2.json
+```
+
+```text
+DIFFERENT: the packages' manifests differ.
+
+  Old  tugma-pkg-v1.json: pkg-2026-01-01-2026-03-31, b51ee955ffc869d3…, on-chain as pkg-2026-01-01-2026-03-31 v1 (countersigned)
+  New  tugma-pkg-v2.json: pkg-2026-01-01-2026-03-31, 1554e8f0b5294156…, on-chain as pkg-2026-01-01-2026-03-31 v2 (not countersigned)
+
+  counts.controls: 3 -> 4
+
+  controls: +1 added, -0 removed
+    + CTRL-009
+
+  evidence: +0 added, -0 removed, ~1 changed
+    ~ evd-0a1b2c3d4e  content hash 9f86d081884c7d65… -> 4e07408562bedb8b…
+```
+
 ## 2b. Verify in a browser
 
 **Hosted:** https://christopher-icalla.github.io/tugma/verifier/web/ is published from this repository on GitHub Pages by [`jekyll-gh-pages.yml`](../.github/workflows/jekyll-gh-pages.yml), so it does not depend on any TUGMA server.

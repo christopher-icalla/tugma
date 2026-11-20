@@ -8,6 +8,7 @@ A `VALID` result establishes package integrity, not that the contents are true o
 npm ci
 node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json   # command line
 node bin/tugma-verify.js batch ./packages/                      # many packages at once
+node bin/tugma-verify.js diff v1.json v2.json                   # what changed between two packages
 npm run web                                                      # browser: http://localhost:8787/web/
 npm run demo                                                     # valid vs. modified package, offline
 npm test
@@ -19,6 +20,7 @@ npm test
 | `src/chain.js` | Read-only contract client over Soroban RPC; the Stellar SDK is passed in |
 | `src/verify.js` | The checks and results |
 | `src/bulk.js` | Checking many packages at once |
+| `src/diff.js` | Comparing two packages |
 | `src/cli.js`, `bin/tugma-verify.js` | Command line |
 | `web/` | Browser page (static files) |
 | `test/vectors.json` | Test vectors shared with the backend |

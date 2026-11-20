@@ -10,6 +10,7 @@ export { canonicalJson } from "./canonical.js";
 export { sha256Hex } from "./hash.js";
 export { createChainReader, normalizeAttestation, withRetry } from "./chain.js";
 export { verifyMany, describeRow } from "./bulk.js";
+export { diffManifests, diffPackages } from "./diff.js";
 export { verifyEvidence, EVIDENCE_FORMAT } from "./evidence.js";
 export { exportMessage, parseExportMessage, checkExportSignature } from "./signature.js";
 export { verifyPackage, versionHistory, MAX_VERSIONS, LIMITATION, EXPORT_FORMAT, EXPORT_FORMAT_VERSION } from "./verify.js";

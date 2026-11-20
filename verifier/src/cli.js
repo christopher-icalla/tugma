@@ -1,12 +1,14 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { describeRow, verifyMany } from "./bulk.js";
+import { diffPackages } from "./diff.js";
 import { verifyEvidence } from "./evidence.js";
 import { verifyPackage } from "./verify.js";
 
 export const USAGE = `Usage: tugma-verify <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify evidence <evidence.json> --package <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify batch <file-or-folder>... [--json] [--rpc <url>] [--contract <C...>]
+       tugma-verify diff <old-package.json> <new-package.json> [--json] [--offline] [--rpc <url>] [--contract <C...>]
 
 Checks an exported TUGMA evidence package against the Stellar Testnet
 attestation contract through Soroban RPC. It never calls TUGMA's API.
@@ -21,6 +23,11 @@ the package manifest, and the package on Stellar.
 
 "batch" checks many packages at once (every .json file in a folder, or the
 files named) and prints one line per file. It exits 0 only if all are valid.
+
+"diff" lists what changed between two packages: entries added or removed,
+evidence whose content hash changed, and the period and counts. It also
+looks up which on-chain version each file is (skip with --offline). It exits
+0 if the manifests are identical and 1 if they differ.
 
 Exit codes: 0 valid, 1 not valid (tampered, not attested, mismatch or bad signature),
 2 bad input, 3 the network could not be reached.`;
@@ -38,15 +45,16 @@ const SUMMARY = {
 
 export function parseArgs(argv) {
   const opts = { json: false, file: null, rpcUrl: undefined, contractId: undefined };
-  if (argv[0] === "evidence" || argv[0] === "batch") {
+  if (["evidence", "batch", "diff"].includes(argv[0])) {
     opts.mode = argv[0];
     argv = argv.slice(1);
   }
-  if (opts.mode === "batch") opts.files = [];
+  if (opts.mode === "batch" || opts.mode === "diff") opts.files = [];
   const KEYS = { "--rpc": "rpcUrl", "--contract": "contractId", "--package": "packageFile" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--json") opts.json = true;
+    else if (a === "--offline" && opts.mode === "diff") opts.offline = true;
     else if (KEYS[a]) {
       const v = argv[++i];
       if (!v) throw new Error(`${a} needs a value`);
@@ -58,6 +66,7 @@ export function parseArgs(argv) {
     else opts.file = a;
   }
   if (opts.mode === "evidence" && opts.file && !opts.packageFile) throw new Error("evidence needs --package <package.json>");
+  if (opts.mode === "diff" && opts.files.length && opts.files.length !== 2) throw new Error("diff needs exactly two package files");
   if (opts.files) opts.file = opts.files[0] ?? null;
   if (opts.mode !== "evidence" && opts.packageFile) throw new Error("--package is only for the evidence command");
   return opts;
@@ -132,6 +141,7 @@ export async function main(argv, deps) {
   }
 
   if (opts.mode === "batch") return runBatch(opts, deps, out, err);
+  if (opts.mode === "diff") return runDiff(opts, deps, out, err);
 
   const load = async (file) => JSON.parse(await (deps.readFile ?? readFile)(file, "utf8"));
   let first;
@@ -228,4 +238,61 @@ async function runBatch(opts, deps, out, err) {
   }
   out(opts.json ? JSON.stringify(batch, null, 2) : formatBatch(batch));
   return batch.all_valid ? 0 : 1;
+}
+
+const short = (h) => (h ? `${h.slice(0, 16)}…` : "none");
+
+function describeSide(label, file, s) {
+  const chain = s.attestation === undefined
+    ? "on-chain status not checked (--offline)"
+    : s.attestation
+      ? `on-chain as ${s.attestation.package_id} v${s.attestation.version} (${s.attestation.countersigned ? "countersigned" : "not countersigned"})`
+      : "not attested on-chain";
+  const tampered = s.matches_declared ? "" : ", contents differ from the hash it was exported with";
+  return `  ${label}  ${file}: ${s.package_id}, ${short(s.recomputed_hash)}, ${chain}${tampered}`;
+}
+
+/** Human-readable report of a diffPackages() result. */
+export function formatDiff(d, files) {
+  const lines = [
+    d.identical ? "IDENTICAL: the two packages have the same manifest." : "DIFFERENT: the packages' manifests differ.",
+    "",
+    describeSide("Old", files[0], d.before),
+    describeSide("New", files[1], d.after),
+  ];
+  if (!d.same_package) lines.push("", "  Note: the files are different packages, not two versions of one package.");
+  for (const f of d.fields) lines.push("", `  ${f.field}: ${JSON.stringify(f.before)} -> ${JSON.stringify(f.after)}`);
+  for (const l of d.lists) {
+    lines.push("", `  ${l.key}: +${l.added.length} added, -${l.removed.length} removed${l.changed.length ? `, ~${l.changed.length} changed` : ""}`);
+    for (const x of l.added) lines.push(`    + ${x}`);
+    for (const x of l.removed) lines.push(`    - ${x}`);
+    for (const c of l.changed) lines.push(`    ~ ${c.id}  content hash ${short(c.before)} -> ${short(c.after)}`);
+  }
+  return lines.join("\n");
+}
+
+async function runDiff(opts, deps, out, err) {
+  const bundles = [];
+  for (const file of opts.files) {
+    try {
+      bundles.push(JSON.parse(await (deps.readFile ?? readFile)(file, "utf8")));
+    } catch (e) {
+      err(`Cannot read ${file} as JSON: ${e.message}`);
+      return EXIT.USAGE;
+    }
+  }
+  let d;
+  try {
+    const chain = opts.offline ? null : deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId });
+    d = await diffPackages(bundles[0], bundles[1], chain);
+  } catch (e) {
+    err(`Could not reach Soroban RPC: ${e.message}`);
+    return EXIT.NETWORK;
+  }
+  if (!d.ok) {
+    err(d.error);
+    return EXIT.USAGE;
+  }
+  out(opts.json ? JSON.stringify(d, null, 2) : formatDiff(d, opts.files));
+  return d.identical ? 0 : 1;
 }
