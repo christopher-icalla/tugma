@@ -47,6 +47,16 @@ export const configSchema = z.object({
   EMAIL_API_URL: z.string().optional().default(''),
   EMAIL_API_KEY: z.string().optional().default(''),
   EMAIL_FROM_NAME: z.string().optional().default('TUGMA'),
+  // Daily control run at this Manila time (HH:MM, 24-hour), or "off".
+  CONTROL_SCHEDULE: z
+    .string()
+    .default('02:00')
+    .refine((v) => /^(off|([01]\d|2[0-3]):[0-5]\d)$/.test(v), 'CONTROL_SCHEDULE must be HH:MM (Manila time) or "off"'),
+  // After each scheduled run, email follow-up reminders (needs email configured).
+  SCHEDULE_REMINDERS: z
+    .string()
+    .optional()
+    .transform((v) => (v ?? 'false').toLowerCase() === 'true'),
   // Testnet only: TUGMA attests synthetic demonstration packages and is not
   // production financial infrastructure. Refuse to start against any other
   // network rather than risk a Mainnet transaction. The passphrase decides

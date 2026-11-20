@@ -110,7 +110,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 ## Features
 
 - **Regulatory intelligence.** Official requirements are kept separate from TUGMA's interpretation and from the operational control, so each layer is traceable to its source document.
-- **Deterministic control engine.** Five controls run against real transaction fields. Runs are append-only, and re-running never duplicates exceptions or resets their workflow state.
+- **Deterministic control engine.** Five controls run against real transaction fields. Runs are append-only, and re-running never duplicates exceptions or resets their workflow state. Every control runs daily at `CONTROL_SCHEDULE` (Manila time, default 02:00), optionally followed by reminder emails, and the dashboard shows the last and next run.
 - **Explainable exceptions.** Every failure records its check, expected value, actual value, variance and tolerance.
 - **Five-state workflow.** `OPEN → IN_REVIEW → REMEDIATION → RESOLVED → VERIFIED`. An exception can't be resolved without evidence and a completed remediation, and the verifier must be a different person from the resolver.
 - **Follow-ups and reminders.** The dashboard groups open exceptions by how far past their due date they are (not due, 1–7, 8–30, 30+ days) and lists attestations still waiting for a countersignature. Compliance leads can email each owner their overdue items and each eligible signer the packages to countersign (never the attesting wallet's owner), and every send is audited.

@@ -48,9 +48,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      <p className="mt-3 font-mono text-[11px] text-slate-600">
-        KPI values reflect the seeded demonstration dataset. Live figures populate once the control engine runs in the next phase.
-      </p>
+      <ScheduleLine schedule={data.schedule} />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-5">
         <Card className="lg:col-span-3" testid="control-health-section">
@@ -108,5 +106,25 @@ export default function Dashboard() {
 
       <FollowUps />
     </div>
+  );
+}
+
+const dateTime = (iso) =>
+  new Date(iso).toLocaleString("en-PH", { timeZone: "Asia/Manila", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+
+/** Last control run and the next scheduled one (Manila time). */
+function ScheduleLine({ schedule }) {
+  if (!schedule) return null;
+  const last = schedule.last_run;
+  const who = last && (last.triggered_by === "scheduler" ? "daily schedule" : last.triggered_by === "startup" ? "startup" : "manual run");
+  return (
+    <p className="mt-3 font-mono text-[11px] text-slate-500" data-testid="control-schedule">
+      {last ? `Last control run ${dateTime(last.at)} (${who})` : "No control run yet"}
+      {" · "}
+      {schedule.enabled
+        ? `Next scheduled run ${dateTime(schedule.next_run)} Manila time, daily at ${schedule.daily_at}${schedule.reminders ? ", followed by reminder emails" : ""}`
+        : "Daily schedule off"}
+      {" · Synthetic demonstration dataset"}
+    </p>
   );
 }

@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { EvidenceController } from './api/evidence.controller';
 import { ExceptionsController } from './api/exceptions.controller';
 import { FollowUpsController } from './api/follow-ups.controller';
+import { FollowUpsService } from './api/follow-ups.service';
 import { OverviewController } from './api/overview.controller';
 import { TransactionsController } from './api/transactions.controller';
 import { AuthController } from './auth/auth.controller';
@@ -12,6 +13,7 @@ import { MailService } from './auth/mail.service';
 import { AuditService } from './common/audit.service';
 import { DetailExceptionFilter, PlainJsonInterceptor } from './common/http';
 import { EngineService } from './engine/engine.service';
+import { SchedulerService } from './engine/scheduler.service';
 import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 import { SeedService } from './seed/seed.service';
@@ -43,6 +45,8 @@ import { StellarController } from './stellar/stellar.controller';
     MailService,
     AuditService,
     EngineService,
+    FollowUpsService,
+    SchedulerService,
     SeedService,
     SorobanService,
     AttestationService,

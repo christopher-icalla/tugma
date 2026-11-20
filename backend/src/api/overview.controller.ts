@@ -4,6 +4,7 @@ import { CurrentUser, PublicUser, publicUserSelect, RequirePerm } from '../auth/
 import { ROLES } from '../auth/permissions';
 import { parse } from '../common/util';
 import { EngineService } from '../engine/engine.service';
+import { SchedulerService } from '../engine/scheduler.service';
 import { PrismaService } from '../prisma.service';
 
 const OPEN_STATES = ['OPEN', 'IN_REVIEW', 'REMEDIATION'];
@@ -15,6 +16,7 @@ export class OverviewController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly engine: EngineService,
+    private readonly scheduler: SchedulerService,
   ) {}
 
   /** Newest run per control code. */
@@ -50,6 +52,7 @@ export class OverviewController {
       this.prisma.controlException.findMany({ where: { ...org, status: { in: OPEN_STATES } } }),
     ]);
 
+    const lastRun = [...latest.values()].sort((a, b) => (b.completed_at?.getTime() ?? 0) - (a.completed_at?.getTime() ?? 0))[0];
     const control_health = controls.map((c) => {
       const r = latest.get(c.control_code);
       return {
@@ -77,6 +80,7 @@ export class OverviewController {
       control_health,
       priority_exceptions: open.slice(0, 8),
       engine_status: 'LIVE',
+      schedule: { ...this.scheduler.status(), last_run: lastRun ? { at: lastRun.completed_at, triggered_by: lastRun.triggered_by } : null },
     };
   }
 

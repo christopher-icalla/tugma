@@ -7,6 +7,7 @@ import { json, NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { config } from './config';
+import { SchedulerService } from './engine/scheduler.service';
 import { SeedService } from './seed/seed.service';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -56,6 +57,7 @@ async function bootstrap() {
   const app = configureApp(await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false }));
   await app.get(SeedService).run();
   await app.listen(cfg.PORT);
+  app.get(SchedulerService).start();
   new Logger('TUGMA').log(`API listening on :${cfg.PORT}`);
 }
 

@@ -9,6 +9,7 @@ import { AppModule } from '../src/app.module';
 import { DEMO_ORG_ID } from '../src/config';
 import { configureApp } from '../src/main';
 import { PrismaService } from '../src/prisma.service';
+import { SchedulerService } from '../src/engine/scheduler.service';
 import { SeedService } from '../src/seed/seed.service';
 import { SorobanService } from '../src/stellar/soroban.service';
 import { FakeSoroban } from './fake-soroban';
@@ -519,5 +520,19 @@ describe('follow-ups and reminders', () => {
     expect(res.body.not_sent).toBe(res.body.recipients);
     const log = await app.get(PrismaService).auditLog.findFirst({ where: { action: 'reminders.send' }, orderBy: { timestamp: 'desc' } });
     expect(log?.after_state).toMatchObject({ recipients: res.body.recipients });
+  });
+});
+
+describe('daily schedule', () => {
+  it('shows the schedule on the dashboard and records scheduled runs', async () => {
+    const before = (await agents.viewer.get('/api/dashboard/summary')).body.schedule;
+    expect(before).toMatchObject({ enabled: true, daily_at: '02:00', timezone: 'Asia/Manila', reminders: false });
+    expect(new Date(before.next_run).getTime()).toBeGreaterThan(Date.now());
+
+    const result = await app.get(SchedulerService).runOnce();
+    expect(result).toMatchObject({ exceptions: 132, reminders: null });
+    const after = (await agents.viewer.get('/api/dashboard/summary')).body;
+    expect(after.schedule.last_run.triggered_by).toBe('scheduler');
+    expect(after.kpis.exceptions).toBe(132);
   });
 });
