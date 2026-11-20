@@ -48,7 +48,7 @@ export class FollowUpsService {
       overdue_exceptions: f.overdue.length,
       awaiting_countersign: f.awaiting_countersign.length,
     };
-    await this.audit.record(actor, 'reminders.send', 'follow_ups', orgId, null, result);
+    await this.audit.record(actor, 'reminders:send', 'follow_ups', orgId, null, result);
     return result;
   }
 }

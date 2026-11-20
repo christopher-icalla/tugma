@@ -518,7 +518,7 @@ describe('follow-ups and reminders', () => {
     expect(res.body).toMatchObject({ email_configured: false, sent: 0 });
     expect(res.body.recipients).toBeGreaterThanOrEqual(1);
     expect(res.body.not_sent).toBe(res.body.recipients);
-    const log = await app.get(PrismaService).auditLog.findFirst({ where: { action: 'reminders.send' }, orderBy: { timestamp: 'desc' } });
+    const log = await app.get(PrismaService).auditLog.findFirst({ where: { action: 'reminders:send' }, orderBy: { timestamp: 'desc' } });
     expect(log?.after_state).toMatchObject({ recipients: res.body.recipients });
   });
 });
