@@ -27,6 +27,7 @@ import ExceptionDetail from "@/pages/app/ExceptionDetail";
 import Evidence from "@/pages/app/Evidence";
 import Reports from "@/pages/app/Reports";
 import Settings from "@/pages/app/Settings";
+import AuditReport from "@/pages/app/AuditReport";
 
 function App() {
   return (
@@ -63,6 +64,9 @@ function App() {
               <Route path="reports" element={<Reports />} />
               <Route path="settings" element={<Settings />} />
             </Route>
+
+            {/* Printable audit report (outside the app shell so it prints cleanly) */}
+            <Route path="/reports/:id/print" element={<AuditReport />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

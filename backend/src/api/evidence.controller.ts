@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma.service';
 import { AttestationService } from '../stellar/attestation.service';
 import { buildEvidenceExport, evidenceFileName, EvidenceNotExportableError, evidenceHashInput } from './evidence-export';
 import { buildPackageExport, exportFileName, PackageNotExportableError } from './package-export';
+import { buildReport } from './package-report';
 import { buildTimeline } from './package-timeline';
 
 const optional = z.string().nullish();
@@ -211,6 +212,46 @@ export class EvidenceController {
     const pkg = await this.prisma.evidencePackage.findFirst({ where: { id, organization_id: user.organization_id } });
     if (!pkg) throw new NotFoundException('Package not found.');
     return { package: (await this.attestations.decorate([pkg]))[0] };
+  }
+
+  /** Everything the printable audit report shows for a finalized package. */
+  @Get('evidence-packages/:id/report')
+  async packageReport(@Param('id') id: string, @CurrentUser() user: PublicUser) {
+    const orgId = user.organization_id;
+    const pkg = await this.prisma.evidencePackage.findFirst({ where: { id, organization_id: orgId } });
+    if (!pkg) throw new NotFoundException('Package not found.');
+    if (pkg.status !== 'FINALIZED' || !pkg.manifest) throw new UnprocessableEntityException('Only a finalized package has an audit report.');
+    const manifest = pkg.manifest as { exceptions?: string[]; evidence?: string[]; controls?: string[] };
+    const [org, exceptions, evidence, controls, runs, requirements, sources] = await Promise.all([
+      this.prisma.organization.findUnique({ where: { id: orgId }, select: { name: true, chain_org_id: true } }),
+      this.prisma.controlException.findMany({ where: { organization_id: orgId, exception_code: { in: manifest.exceptions ?? [] } } }),
+      this.prisma.evidence.findMany({ where: { organization_id: orgId, id: { in: (manifest.evidence ?? []).map((e) => e.slice(0, e.lastIndexOf(':'))) } } }),
+      this.prisma.control.findMany({ where: { organization_id: orgId } }),
+      this.prisma.controlTestRun.findMany({ where: { organization_id: orgId }, orderBy: [{ control_code: 'asc' }, { completed_at: 'desc' }], distinct: ['control_code'] }),
+      this.prisma.regulatoryRequirement.findMany({ select: { id: true, requirement_code: true, source_id: true } }),
+      this.prisma.regulatorySource.findMany({ select: { id: true, regulator: true } }),
+    ]);
+    const reqById = new Map(requirements.map((r) => [r.id, r]));
+    const regulatorBySource = new Map(sources.map((s) => [s.id, s.regulator]));
+    const runByCode = new Map(runs.map((r) => [r.control_code, r]));
+    const report = buildReport(manifest, exceptions, evidence, controls.map((c) => {
+      const req = reqById.get(c.requirement_id);
+      return {
+        control_code: c.control_code, name: c.name, requirement_code: req?.requirement_code ?? null,
+        regulator: req ? regulatorBySource.get(req.source_id) ?? null : null, run: runByCode.get(c.control_code) ?? null,
+      };
+    }));
+    const [decorated] = await this.attestations.decorate([pkg]);
+    const cfg = this.attestations.publicConfig();
+    await this.audit.record(user, 'package:report', 'evidence_package', id, null, { canonical_hash: pkg.canonical_hash });
+    return {
+      organization: { name: org?.name ?? null, chain_org_id: org?.chain_org_id ?? null },
+      package: { ...decorated, manifest: undefined },
+      network: { name: cfg.network, contract_id: cfg.contract_id, explorer_url: cfg.explorer_url },
+      generated_at: new Date().toISOString(),
+      prepared_by: user.name,
+      ...report,
+    };
   }
 
   /** Generated, attested, countersigned, downloaded and synced, in time order, with Stellar transaction links. */

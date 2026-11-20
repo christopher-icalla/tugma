@@ -42,6 +42,8 @@ export function buildTimeline(pkg: Pkg, audits: Audit[], attestations: Attestati
       events.push({ at: a.timestamp.toISOString(), kind: 'generated', title: 'Package generated', actor: who(a), detail: typeof hash === 'string' ? `SHA-256 ${hash}` : null, tx_hash: null, ledger: null, link: null });
     } else if (a.action === 'package:export') {
       events.push({ at: a.timestamp.toISOString(), kind: 'exported', title: 'Package file downloaded', actor: who(a), detail: typeof hash === 'string' ? `SHA-256 ${hash}` : null, tx_hash: null, ledger: null, link: null });
+    } else if (a.action === 'package:report') {
+      events.push({ at: a.timestamp.toISOString(), kind: 'exported', title: 'Audit report opened', actor: who(a), detail: null, tx_hash: null, ledger: null, link: null });
     } else if (a.action === 'package:sync') {
       const n = field(a.after_state, 'versions');
       events.push({ at: a.timestamp.toISOString(), kind: 'synced', title: 'Synced from the contract', actor: who(a), detail: typeof n === 'number' ? `${n} version(s) on-chain` : null, tx_hash: null, ledger: null, link: null });

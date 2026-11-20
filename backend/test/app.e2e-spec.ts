@@ -557,3 +557,26 @@ describe('package timeline', () => {
     expect((await agents.auditor.get('/api/evidence-packages/does-not-exist/timeline')).status).toBe(404);
   });
 });
+
+describe('audit report', () => {
+  it('returns the report data for a finalized package and records that it was opened', async () => {
+    const gen = await agents.compliance.post('/api/evidence-packages/generate').send({ period_start: '2026-02-01', period_end: '2026-02-28' });
+    const pkg = gen.body.package;
+    const { status, body } = await agents.auditor.get(`/api/evidence-packages/${pkg.id}/report`);
+    expect(status).toBe(200);
+    expect(body.package).toMatchObject({ id: pkg.id, canonical_hash: pkg.canonical_hash, status: 'FINALIZED' });
+    expect(body.package.manifest).toBeUndefined();
+    expect(body.network).toMatchObject({ name: 'TESTNET', contract_id: soroban.contractId });
+    expect(body.organization.chain_org_id).toMatch(/^org_[0-9a-f]{32}$/);
+    expect(body.exceptions).toHaveLength(pkg.exceptions_count);
+    expect(body.evidence).toHaveLength(pkg.evidence_count);
+    expect(body.controls.map((c: { control_code: string }) => c.control_code)).toContain('CTRL-005');
+    const ctrl5 = body.controls.find((c: { control_code: string }) => c.control_code === 'CTRL-005');
+    expect(ctrl5).toMatchObject({ requirement_code: 'BSP-PS-04', regulator: 'BSP' });
+    expect(Object.values(body.exceptions_by_severity as Record<string, number>).reduce((a, b) => a + b, 0)).toBe(pkg.exceptions_count);
+
+    const timeline = await agents.auditor.get(`/api/evidence-packages/${pkg.id}/timeline`);
+    expect(timeline.body.events.map((e: { title: string }) => e.title)).toContain('Audit report opened');
+    expect((await agents.auditor.get('/api/evidence-packages/pkg-2026-q1/report')).status).toBe(422);
+  });
+});

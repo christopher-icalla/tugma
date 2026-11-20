@@ -1,5 +1,5 @@
 import React from "react";
-import { FileBarChart, Loader2 } from "lucide-react";
+import { FileBarChart, FileText, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { PageHeader, Card, shortDate } from "@/components/app/shared";
 import { LoadingState, ErrorState, EmptyState } from "@/components/States";
@@ -91,6 +91,12 @@ export default function Reports() {
                     <p className="mt-1 break-all font-mono text-[11px] text-emerald-300/80" data-testid={`pkg-hash-${p.id}`}>{p.canonical_hash}</p>
                   </div>
                   <DownloadPackageButton pkg={p} />
+                  {p.status === "FINALIZED" && (
+                    <a href={`/reports/${encodeURIComponent(p.id)}/print?print=1`} target="_blank" rel="noopener noreferrer" data-testid={`audit-report-${p.id}`}
+                      className="mt-2 inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200 hover:border-sky-500">
+                      <FileText className="h-3.5 w-3.5" /> Audit report (PDF)
+                    </a>
+                  )}
                   <PackageQr pkg={p} />
                 </div>
                 <AttestationPanel pkg={p} stellarConfig={stellarConfig} onChange={load} />
