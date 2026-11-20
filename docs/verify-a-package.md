@@ -56,11 +56,13 @@ To see what changed between two packages, for example version 1 and a re-atteste
 node bin/tugma-verify.js diff tugma-pkg-v1.json tugma-pkg-v2.json
 ```
 
+Output for two test packages (neither is attested on Testnet, which the report says for each file):
+
 ```text
 DIFFERENT: the packages' manifests differ.
 
-  Old  tugma-pkg-v1.json: pkg-2026-01-01-2026-03-31, b51ee955ffc869d3…, on-chain as pkg-2026-01-01-2026-03-31 v1 (countersigned)
-  New  tugma-pkg-v2.json: pkg-2026-01-01-2026-03-31, 1554e8f0b5294156…, on-chain as pkg-2026-01-01-2026-03-31 v2 (not countersigned)
+  Old  tugma-pkg-v1.json: pkg-2026-01-01-2026-03-31, b51ee955ffc869d3…, not attested on-chain
+  New  tugma-pkg-v2.json: pkg-2026-01-01-2026-03-31, 1554e8f0b5294156…, not attested on-chain
 
   counts.controls: 3 -> 4
 
@@ -68,7 +70,7 @@ DIFFERENT: the packages' manifests differ.
     + CTRL-009
 
   evidence: +0 added, -0 removed, ~1 changed
-    ~ evd-0a1b2c3d4e  content hash 9f86d081884c7d65… -> 4e07408562bedb8b…
+    ~ evd-0a1b2c3d4e  content hash 9f86d081884c7d65… -> cccccccccccccccc…
 ```
 
 To audit who signed a package, use `signers`. For every on-chain version of the package the file names, it lists the attesting and countersigning wallets with timestamps, whether each wallet is still an authorized signer for the organization, and signer additions and removals that the RPC still holds (`signer_changed` events; Soroban RPC keeps about seven days on Testnet). It exits `1` if any version is not countersigned or was countersigned by its own attester:
