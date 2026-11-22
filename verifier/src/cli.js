@@ -6,7 +6,7 @@ import { auditSigners } from "./signers.js";
 import { verifyEvidence } from "./evidence.js";
 import { verifyPackage } from "./verify.js";
 
-export const USAGE = `Usage: tugma-verify <package.json> [--json] [--rpc <url>] [--contract <C...>]
+export const USAGE = `Usage: tugma-verify <package.json> [--json] [--rpc <url>] [--contract <C...>] [--horizon <url>]
        tugma-verify evidence <evidence.json> --package <package.json> [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify batch <file-or-folder>... [--json] [--rpc <url>] [--contract <C...>]
        tugma-verify signers <package.json> [--json] [--rpc <url>] [--contract <C...>]
@@ -18,6 +18,8 @@ attestation contract through Soroban RPC. It never calls TUGMA's API.
   --json             print the full result as JSON
   --rpc <url>        Soroban RPC endpoint (default: https://soroban-testnet.stellar.org)
   --contract <C...>  attestation contract id (default: TUGMA's Testnet contract)
+  --horizon <url>    Horizon endpoint, read for two-party attestations (default:
+                     https://horizon-testnet.stellar.org)
   --package <file>   (evidence) the package the evidence record should be listed in
 
 "evidence" checks one exported evidence record: its content hash, its line in
@@ -34,7 +36,15 @@ looks up which on-chain version each file is (skip with --offline). It exits
 "signers" audits who attested and who countersigned every on-chain version of
 the package the file names, whether each wallet is still an authorized signer,
 and recent signer changes. It exits 1 if any version is not countersigned or
-was countersigned by its own attester.
+was countersigned by its own attester. A two-party (multisig) attestation
+counts as signed by two parties when its transaction carries verified
+signatures from both required keys.
+
+For a two-party attestation, every command also lists the attestation
+account's signers (labelled TUGMA and Independent reviewer on-chain), checks
+each signature on the attestation transaction against them (signature hint
+plus ed25519 over the transaction hash) and shows whether the account's
+thresholds required both.
 
 Exit codes: 0 valid, 1 not valid (tampered, not attested, mismatch or bad signature),
 2 bad input, 3 the network could not be reached.`;
@@ -57,7 +67,7 @@ export function parseArgs(argv) {
     argv = argv.slice(1);
   }
   if (opts.mode === "batch" || opts.mode === "diff") opts.files = [];
-  const KEYS = { "--rpc": "rpcUrl", "--contract": "contractId", "--package": "packageFile" };
+  const KEYS = { "--rpc": "rpcUrl", "--contract": "contractId", "--package": "packageFile", "--horizon": "horizonUrl" };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--json") opts.json = true;
@@ -78,6 +88,9 @@ export function parseArgs(argv) {
   if (opts.mode !== "evidence" && opts.packageFile) throw new Error("--package is only for the evidence command");
   return opts;
 }
+
+/** What the chain reader gets; --horizon only when given (the reader has a default). */
+const readerOptions = (opts) => ({ rpcUrl: opts.rpcUrl, contractId: opts.contractId, ...(opts.horizonUrl ? { horizonUrl: opts.horizonUrl } : {}) });
 
 const EVIDENCE_SUMMARY = {
   VALID: "VALID: this evidence record is listed in the package, and the package is the one attested on Stellar.",
@@ -111,6 +124,7 @@ export function formatResult(r) {
       `  Exported by  ${r.signature ? `${r.signature.signer} at ${r.signature.exported_at}` : "unsigned file"}`,
     );
   }
+  if (r.multisig) lines.push("", ...formatMultisig(r.multisig, "  "));
   if (r.history?.versions.length) {
     lines.push("", "  Versions on-chain (newest first):");
     for (const v of r.history.versions) {
@@ -167,7 +181,7 @@ export async function main(argv, deps) {
 
   let result;
   try {
-    const chain = deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId });
+    const chain = deps.reader(readerOptions(opts));
     result = opts.mode === "evidence" ? await verifyEvidence(first, bundle, chain) : await verifyPackage(first, chain);
   } catch (e) {
     err(`Could not reach Soroban RPC: ${e.message}`);
@@ -239,7 +253,7 @@ async function runBatch(opts, deps, out, err) {
   }
   let batch;
   try {
-    batch = await verifyMany(entries, deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId }));
+    batch = await verifyMany(entries, deps.reader(readerOptions(opts)));
   } catch (e) {
     err(`Could not reach Soroban RPC: ${e.message}`);
     return EXIT.NETWORK;
@@ -291,7 +305,7 @@ async function runDiff(opts, deps, out, err) {
   }
   let d;
   try {
-    const chain = opts.offline ? null : deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId });
+    const chain = opts.offline ? null : deps.reader(readerOptions(opts));
     d = await diffPackages(bundles[0], bundles[1], chain);
   } catch (e) {
     err(`Could not reach Soroban RPC: ${e.message}`);
@@ -305,12 +319,33 @@ async function runDiff(opts, deps, out, err) {
   return d.identical ? 0 : 1;
 }
 
+/** Lines describing a two-party attestation's signers (checkAttestationSigners() result). */
+export function formatMultisig(m, indent = "") {
+  if (!m.thresholds) return [`${indent}Two-party attestation: ${m.problems.join("; ")}`];
+  const t = m.thresholds;
+  const lines = [
+    `${indent}Attestation signers (multisig account ${m.account_id}; thresholds low ${t.low} / medium ${t.med} / high ${t.high}):`,
+  ];
+  const width = Math.max(...m.signers.map((s) => s.label.length));
+  for (const s of m.signers) {
+    lines.push(`${indent}  ${s.signed ? "[ok]  " : "[FAIL]"} ${s.label.padEnd(width)}  ${s.key}  weight ${s.weight}  ${s.signed ? "signature verified" : "no valid signature"}`);
+  }
+  if (m.unknown_signatures) lines.push(`${indent}  ${m.unknown_signatures} signature(s) match no signer of the account`);
+  lines.push(m.ok
+    ? `${indent}  TWO-PARTY: both signers were required (no single key reaches the threshold of ${m.required_weight}); signed weight ${m.signed_weight} of ${m.required_weight}.`
+    : `${indent}  ${m.status === "INSUFFICIENT" ? "INSUFFICIENT" : m.status}: ${m.problems.join("; ")}.`);
+  lines.push(`${indent}  Transaction ${m.transaction.hash} (ledger ${m.transaction.ledger}). ${m.note}`);
+  return lines;
+}
+
 /** Human-readable report of an auditSigners() result. */
 export function formatSigners(a) {
   if (!a.version_count) return `NO VERSIONS: ${a.package_id} has no attestation on contract ${a.contract_id}.`;
   const lines = [
     a.ok
-      ? `OK: all ${a.versions.length} version(s) of ${a.package_id} were countersigned by a different wallet.`
+      ? a.versions.some((v) => v.multisig?.ok)
+        ? `OK: all ${a.versions.length} version(s) of ${a.package_id} were signed by two parties (countersigned by a different wallet, or co-signed by both keys of a two-party account).`
+        : `OK: all ${a.versions.length} version(s) of ${a.package_id} were countersigned by a different wallet.`
       : `ATTENTION: ${a.problems.length} problem(s) in the signing history of ${a.package_id}.`,
     "",
     `  Organization ${a.org}`,
@@ -321,7 +356,8 @@ export function formatSigners(a) {
   if (a.omitted) lines.push(`    … ${a.omitted} older version(s) not shown`);
   for (const v of a.versions) {
     lines.push(`    ${v.issues.length ? "[FAIL]" : "[ok]  "} v${v.version}  attested ${v.attested_at} by ${v.attester}`);
-    lines.push(`                 ${v.verifier ? `countersigned ${v.verified_at} by ${v.verifier}` : "not countersigned"}`);
+    lines.push(`                 ${v.verifier ? `countersigned ${v.verified_at} by ${v.verifier}` : v.multisig?.ok ? "two-party attestation: no countersignature needed" : "not countersigned"}`);
+    if (v.multisig) lines.push(...formatMultisig(v.multisig, "                 "));
     for (const i of v.issues) lines.push(`                 problem: ${i}`);
   }
   lines.push("", "  Wallets:");
@@ -353,7 +389,7 @@ async function runSigners(opts, deps, out, err) {
   }
   let audit;
   try {
-    audit = await auditSigners(deps.reader({ rpcUrl: opts.rpcUrl, contractId: opts.contractId }), bundle.org, bundle.package_id);
+    audit = await auditSigners(deps.reader(readerOptions(opts)), bundle.org, bundle.package_id);
   } catch (e) {
     err(`Could not reach Soroban RPC: ${e.message}`);
     return EXIT.NETWORK;

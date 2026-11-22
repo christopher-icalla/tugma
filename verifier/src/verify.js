@@ -1,5 +1,6 @@
 import { canonicalJson } from "./canonical.js";
 import { sha256Hex } from "./hash.js";
+import { readAttestationSigners } from "./multisig.js";
 import { checkExportSignature } from "./signature.js";
 
 export const EXPORT_FORMAT = "tugma.evidence-package";
@@ -141,7 +142,12 @@ export async function verifyPackage(bundle, chain) {
   if (latest > attestation.version) {
     warnings.push(`This is version ${attestation.version}; version ${latest} of this package has since been attested.`);
   }
-  if (!attestation.verifier) warnings.push("This attestation has not been countersigned.");
+  // Two-party attestation: both signatures on the attestation transaction, checked here.
+  const multi = await readAttestationSigners(chain, attestation);
+  if (multi.error) warnings.push(`The attestation's signers could not be read from Horizon: ${multi.error}`);
+  if (multi.signers && !multi.signers.ok) warnings.push(`Two-party attestation: ${multi.signers.problems.join("; ")}.`);
+  if (!attestation.verifier && !multi.signers?.ok) warnings.push("This attestation has not been countersigned.");
+  const multisig = multi.signers ?? null;
 
   // 4. Optional: the exporting wallet's SEP-53 signature over this exact package.
   const signature = await checkExportSignature(bundle, recomputed, chain);
@@ -149,8 +155,8 @@ export async function verifyPackage(bundle, chain) {
     check("Export signature", signature.ok, signature.ok
       ? `signed by ${signature.signer}${signature.authorized_signer ? ", an authorized signer for this organization" : " (not an authorized signer on-chain)"}`
       : signature.problems.join("; "));
-    if (!signature.ok) return result("BAD_SIGNATURE", { ...base, attestation, latest_version: latest, history, signature });
+    if (!signature.ok) return result("BAD_SIGNATURE", { ...base, attestation, latest_version: latest, history, signature, multisig });
   }
 
-  return result("VALID", { ...base, attestation, latest_version: latest, history, signature });
+  return result("VALID", { ...base, attestation, latest_version: latest, history, signature, multisig });
 }

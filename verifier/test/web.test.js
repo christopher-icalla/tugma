@@ -19,7 +19,7 @@ test("the page loads the pinned SDK version with an integrity hash", () => {
 });
 
 test("the page and its scripts never reference TUGMA's API", () => {
-  for (const f of ["../web/index.html", "../web/app.js", "../web/view.js", "../src/chain.js", "../src/verify.js", "../src/bulk.js"]) {
+  for (const f of ["../web/index.html", "../web/app.js", "../web/view.js", "../src/chain.js", "../src/verify.js", "../src/bulk.js", "../src/multisig.js"]) {
     assert.doesNotMatch(read(f), /\/api\/|REACT_APP_BACKEND_URL|tugma\.(ph|app|io)/i, f);
   }
 });

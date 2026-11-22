@@ -5,14 +5,23 @@
  * Node.js (`import * as sdk from "@stellar/stellar-sdk"`) and in a browser
  * (the SDK's browser build exposes `window.StellarSdk`). Reads are transaction
  * simulations: nothing is signed or submitted, and no TUGMA server is involved.
+ * For two-party attestations it also reads the attester account and its
+ * attestation transaction from Horizon (multisig.js).
  */
+import { createHorizonSigners } from "./multisig.js";
 
 // Any syntactically valid account can be the source of a read-only simulation.
 const SIMULATION_SOURCE = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 // Contract error #3 (NotFound) in contracts/contracts/attestation/src/lib.rs.
 const NOT_FOUND = /Error\(Contract, #3\)/;
 
-export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }, server) {
+/**
+ * @param {object} options  rpcUrl, contractId, networkPassphrase; horizonUrl (optional) also checks
+ *   who signed two-party attestations
+ * @param {object} [server]  a Soroban RPC stand-in (tests)
+ * @param {{ fetchJson?: (url: string) => Promise<object> }} [horizon]  a Horizon stand-in (tests)
+ */
+export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase, horizonUrl }, server, horizon = {}) {
   const rpcServer = server ?? new sdk.rpc.Server(rpcUrl, { allowHttp: rpcUrl.startsWith("http://") });
   const contract = new sdk.Contract(contractId);
 
@@ -37,6 +46,13 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase }
   return {
     contractId,
     networkPassphrase,
+    horizonUrl: horizonUrl ?? null,
+    /**
+     * For an attester account with several signers (a two-party attestation):
+     * every signer, whether its signature on the attestation transaction
+     * verifies, and whether the thresholds needed both. { multisig: false } otherwise.
+     */
+    ...(horizonUrl ? { attestationSigners: createHorizonSigners(sdk, { horizonUrl, contractId, networkPassphrase }, horizon.fetchJson) } : {}),
     /** The attestation recorded for a SHA-256 (hex), or null if none. */
     async verify(hashHex) {
       if (!/^[0-9a-f]{64}$/.test(hashHex)) throw new Error("Hash must be 64 lowercase hex characters.");

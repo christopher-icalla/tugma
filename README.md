@@ -119,6 +119,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 - **On-chain attestation (Soroban).** Users sign with their own Freighter wallet: one authorized signer attests the package hash and a different one countersigns. Versions are append-only, and anyone can look up a hash on the public `/stellar` page.
 - **Independent verification.** A finalized package downloads in canonical form, and the open-source verifier (`verifier/`, command line and browser) rebuilds its canonical JSON, recalculates the SHA-256 and reads the attestation straight from the Testnet contract through Soroban RPC, without calling TUGMA's API. A match proves package integrity, not that the contents are true. See [docs/verify-a-package.md](docs/verify-a-package.md).
 - **Verifier toolkit.** `tugma-verify batch` checks a folder of packages at once (also in the browser by choosing several files), `diff` shows what changed between two package versions, and `signers` audits who attested and countersigned every version and whether those wallets are still authorized.
+- **Two-party attestation (optional, Testnet only).** A dedicated attestation account whose signers and thresholds (`setOptions`) need both TUGMA's key and an independent reviewer's key. TUGMA builds and signs the attestation on its server, the reviewer signs it in their own wallet through Stellar Wallets Kit, and the verifier shows both signers. Off unless configured; see [docs/two-party-attestation.md](docs/two-party-attestation.md).
 - **Signed exports.** A user's linked Freighter wallet can sign the exported file (SEP-53), so a verifier also sees which account exported this exact package.
 - **Version history.** The verifier lists every attested version of a package and marks the one the file matches.
 - **Per-document proofs.** One evidence record can be checked against its line in a package, without sharing any other document.
@@ -154,6 +155,8 @@ flowchart LR
 ```
 
 The API **never holds a Stellar secret key**. It builds and simulates every contract call, hands the unsigned transaction to the browser, and Freighter signs it. The API then checks that the signed envelope is byte-for-byte the transaction it prepared, submits it, and records the confirmed result.
+
+The one exception is the optional [two-party attestation](docs/two-party-attestation.md) mode, off unless its `MULTISIG_*` settings are configured: TUGMA's server key and an independent reviewer's wallet key are the two signers of a Testnet attestation account that needs both, so TUGMA's key can't attest anything on its own and never sees the reviewer's key.
 
 ---
 

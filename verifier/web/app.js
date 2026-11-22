@@ -13,6 +13,7 @@ if (expectedHash) $("expected").textContent = `Checking for package ${expectedHa
 
 $("rpc").value = TESTNET.rpcUrl;
 $("contract").value = TESTNET.contractId;
+$("horizon").value = TESTNET.horizonUrl;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -30,6 +31,26 @@ function renderDetails(out, vm) {
   const dl = el("dl");
   for (const [k, v] of vm.details) dl.append(el("dt", null, k), el("dd", "mono", v));
   out.append(dl);
+
+  if (vm.signers) {
+    out.append(el("h3", null, vm.signers.title));
+    if (vm.signers.account) out.append(el("p", "mono", vm.signers.account));
+    const list = el("ul", "checks");
+    for (const r of vm.signers.rows) {
+      const li = el("li", r.ok ? "ok" : "fail", `${r.ok ? "✓" : "✗"} ${r.text}`);
+      li.append(el("span", "mono hash", r.key));
+      list.append(li);
+    }
+    out.append(list, el("p", vm.signers.ok ? "summary" : "warning", vm.signers.verdict));
+    if (vm.signers.note) out.append(el("p", null, vm.signers.note));
+    if (vm.signers.txLink) {
+      const link = el("a", null, "View the attestation transaction on Stellar Expert");
+      link.href = vm.signers.txLink;
+      link.rel = "noopener noreferrer";
+      link.target = "_blank";
+      out.append(link);
+    }
+  }
 
   if (vm.versions.length) {
     out.append(el("h3", null, "Versions on-chain (newest first)"));
@@ -95,6 +116,7 @@ function reader() {
     rpcUrl: $("rpc").value.trim(),
     contractId: $("contract").value.trim(),
     networkPassphrase: TESTNET.networkPassphrase,
+    horizonUrl: $("horizon").value.trim() || TESTNET.horizonUrl,
   });
 }
 

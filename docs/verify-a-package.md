@@ -111,6 +111,19 @@ For a signed export it also checks the SEP-53 signature and reports whether the 
 | `BAD_SIGNATURE` | The file carries an export signature that is not a valid signature by its signer, or that names a different package, organization or hash |
 | `INVALID_FILE` | Not a TUGMA package export |
 
+### Two-party (multisig) attestations
+
+When the attester is an account with several signers, as with TUGMA's optional [two-party attestation](two-party-attestation.md), the verifier also shows who signed. From Stellar Horizon (`https://horizon-testnet.stellar.org` by default, `--horizon` or **Network settings** to change it) it reads the attester account's signers, weights, thresholds and its `tugma.signer.tugma` / `tugma.signer.reviewer` data entries, which label which key is TUGMA's and which is the reviewer's. It then finds the account's transaction in the attestation's ledger that is the `attest` call for this hash on this contract, and verifies every signature on it itself: the signature hint selects the candidate key, and an ed25519 check over the transaction hash decides.
+
+```text
+  Attestation signers (multisig account GDOD…TU5O; thresholds low 2 / medium 2 / high 2):
+    [ok]   TUGMA                 GDEE…GFRA  weight 1  signature verified
+    [ok]   Independent reviewer  GCQJ…6MMM  weight 1  signature verified
+    TWO-PARTY: both signers were required (no single key reaches the threshold of 2); signed weight 2 of 2.
+```
+
+A verified two-party attestation counts as signed by two parties, so it is not reported as missing a countersignature (in `signers` too). If the verified signatures don't reach the account's threshold, the signer without a valid signature is marked `[FAIL]` and the result says **INSUFFICIENT**; the package itself can still be `VALID`, since the hash check doesn't depend on it. Signers and thresholds are the account's current ones. For an ordinary single-wallet attestation nothing changes. Horizon is a public Stellar service; the verifier still never contacts TUGMA.
+
 The hash written in the file is never trusted on its own, and the contract id always comes from the verifier's settings (TUGMA's Testnet contract `CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH` by default), never from the file. If the file names a different contract, the verifier says so.
 
 ## Check one document without the others

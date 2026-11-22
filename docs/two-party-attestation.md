@@ -77,6 +77,10 @@ On **Reports**, a package that can be attested gets **Request two-party attestat
 
 The reviewer's page, `/review/<request id>`, shows exactly what is being signed: the contract call, package id and period, expected version, canonical SHA-256, attestation account, both signer keys, the network (Testnet passphrase), the transaction hash and the deadline. The reviewer connects their own wallet through [Stellar Wallets Kit](https://stellarwalletskit.dev/) (Freighter, xBull, Albedo, Lobstr, Hana and others, set to Testnet). The page refuses to sign with a wallet account other than the configured reviewer key and refuses any network but Testnet. The wallet signs the envelope, and only the signed envelope is sent back.
 
+### What the verifier shows
+
+`tugma-verify` (including `signers`) and the browser verifier read the attestation account's signers, thresholds and labels from Horizon, find the attestation transaction, and verify each signature against the signer keys themselves (signature hint, then ed25519 over the transaction hash). They list both signers, TUGMA and the independent reviewer, and say whether the thresholds required both. With only one valid signature the result shows the missing signer and **INSUFFICIENT**. They never contact TUGMA. See [verify-a-package.md](verify-a-package.md#two-party-multisig-attestations).
+
 ## 3. Enabling it
 
 Set all three on the API (blank or unset means off; setting only some is a startup error), then restart:

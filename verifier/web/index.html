@@ -13,7 +13,7 @@
     <header>
       <p class="eyebrow">TUGMA · Independent verification</p>
       <h1>Check an evidence package against Stellar</h1>
-      <p>Choose a package file downloaded from TUGMA. This page rebuilds its canonical form, recalculates the SHA-256 hash and reads the attestation directly from the Stellar Testnet contract through Soroban RPC. It never contacts TUGMA's servers, and the file never leaves your browser.</p>
+      <p>Choose a package file downloaded from TUGMA. This page rebuilds its canonical form, recalculates the SHA-256 hash and reads the attestation directly from the Stellar Testnet contract through Soroban RPC. For a two-party attestation it also reads the attestation account's signers and the attestation transaction from Stellar Horizon, and checks both signatures itself. It never contacts TUGMA's servers, and the file never leaves your browser.</p>
     </header>
 
     <p id="expected" class="expected mono"></p>
@@ -29,6 +29,7 @@
       <summary>Network settings</summary>
       <label>Soroban RPC <input id="rpc" type="url" spellcheck="false"></label>
       <label>Attestation contract <input id="contract" type="text" spellcheck="false"></label>
+      <label>Horizon (two-party attestation signers) <input id="horizon" type="url" spellcheck="false"></label>
       <p>The contract is set here, never taken from the file. Defaults are TUGMA's public Testnet deployment.</p>
     </details>
 

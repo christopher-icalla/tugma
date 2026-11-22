@@ -98,6 +98,10 @@ Contract state records the ledger of an attestation but not its transaction hash
 
 `canonical_hash` is the SHA-256 of the package manifest in canonical JSON (sorted keys). The manifest lists **identifiers only**: the period, regulatory source and requirement ids, control codes, test-run ids, transaction ids, exception codes, remediation ids, `evidence id:content hash` pairs, and counts. The manifest and every record it points to stay in TUGMA's database. Publishing the hash proves the package existed in exactly that form at that ledger without revealing any of it.
 
+## Two-party attestation account
+
+With the optional [two-party attestation](two-party-attestation.md) mode, the attester is a dedicated Stellar account rather than a person's wallet. Its public account entry shows two signers of weight 1 (TUGMA's key and the reviewer's key), master weight 0, thresholds of 2, and two data entries, `tugma.signer.tugma` and `tugma.signer.reviewer`, whose values are those two public keys. Each attestation transaction from it carries both signatures. None of this adds package or organization data: the keys are public keys, as with any wallet.
+
 ## Wallet addresses
 
 Attester and countersigner addresses are public keys. They don't name anyone on-chain. They become linkable to a person only if the same account is used elsewhere under that person's name. Use a dedicated wallet for attestation.

@@ -43,7 +43,7 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
       ["Organization (on-chain id)", a.org],
       ["Attested", `${a.attested_at}, ledger ${a.attested_ledger}`],
       ["Attester", a.attester],
-      ["Countersigned", a.verifier ? `${a.verified_at} by ${a.verifier}` : "No"],
+      ["Countersigned", a.verifier ? `${a.verified_at} by ${a.verifier}` : result.multisig?.ok ? "Not needed: two-party attestation" : "No"],
       ["Exported by", result.signature ? `${result.signature.signer} at ${result.signature.exported_at}` : "Unsigned file"],
     );
   }
@@ -59,11 +59,33 @@ export function viewModel(result, explorerUrl = "https://stellar.expert/explorer
     summary,
     checks,
     details,
+    signers: signersViewModel(result.multisig, explorerUrl),
     versions,
     versionsOmitted: result.history?.omitted ?? 0,
     warnings: result.warnings,
     limitation: result.limitation,
     contractLink: `${explorerUrl}/contract/${encodeURIComponent(result.contract_id)}`,
+  };
+}
+
+/**
+ * The signers of a two-party attestation (checkAttestationSigners() result),
+ * or null for an ordinary single-wallet attestation.
+ */
+export function signersViewModel(m, explorerUrl = "https://stellar.expert/explorer/testnet") {
+  if (!m) return null;
+  if (!m.thresholds) return { ok: false, title: "Two-party attestation", verdict: m.problems.join("; "), rows: [], account: m.account_id ?? null, txLink: null };
+  const t = m.thresholds;
+  return {
+    ok: m.ok,
+    title: `Attestation signers · multisig account, thresholds low ${t.low} / medium ${t.med} / high ${t.high}`,
+    account: m.account_id,
+    rows: m.signers.map((s) => ({ ok: s.signed, text: `${s.label} · weight ${s.weight} · ${s.signed ? "signature verified" : "no valid signature"}`, key: s.key })),
+    verdict: m.ok
+      ? `Both signers were required: no single key reaches the threshold of ${m.required_weight}, and the verified signatures weigh ${m.signed_weight}.`
+      : `${m.status === "INSUFFICIENT" ? "Insufficient signatures" : m.status}: ${m.problems.join("; ")}.`,
+    note: m.note,
+    txLink: m.transaction ? `${explorerUrl}/tx/${encodeURIComponent(m.transaction.hash)}` : null,
   };
 }
 
