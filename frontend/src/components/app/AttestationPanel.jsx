@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ShieldCheck, Loader2, ExternalLink, RefreshCw, SearchCheck, AlertTriangle } from "lucide-react";
+import { ShieldCheck, Loader2, ExternalLink, RefreshCw, SearchCheck, AlertTriangle, Users, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { api, formatApiErrorDetail } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
@@ -11,7 +11,11 @@ import { explorerContract, explorerTx, shortKey, signAndSubmit } from "@/lib/ste
 
 const errorText = (e) => formatApiErrorDetail(e.response?.data?.detail ?? e.message);
 
-// On-chain anchoring for one evidence package: attest -> countersign -> verify.
+const COSIGN_OPEN = ["AWAITING_REVIEWER", "SUBMITTING", "STALE"];
+
+// On-chain anchoring for one evidence package: attest -> countersign -> verify,
+// or (when the server has two-party attestation configured) TUGMA signs ->
+// the independent reviewer signs in their own wallet -> co-signed.
 export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
   const { user } = useAuth();
   const [busy, setBusy] = React.useState(null);
@@ -25,6 +29,12 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
   const wallet = user?.stellar_address;
 
   const canAttest = finalized && can(user?.role, "package:attest") && (!attested || stale);
+  const multisig = stellarConfig?.multisig;
+  const cosign = pkg.cosign;
+  const cosignOpen = !!cosign && COSIGN_OPEN.includes(cosign.status) && cosign.canonical_hash === pkg.canonical_hash && (!attested || stale);
+  const canRequestCosign = !!multisig && finalized && can(user?.role, "package:attest") && (!attested || stale) && !cosignOpen;
+  const coSigned = st.verification_status === "CO_SIGNED";
+  const signerKey = (role) => (st.multisig_signers || []).find((s) => s.role === role)?.key;
   const canCountersign =
     finalized && attested && !stale && st.verification_status === "ATTESTED" &&
     can(user?.role, "package:countersign") && st.attester_user_id !== user?.id;
@@ -39,6 +49,23 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
     toast.success(message);
     await onChange();
   });
+
+  const doRequestCosign = () => run("cosign", async () => {
+    const { data } = await api.post(`/stellar/packages/${pkg.id}/cosign/request`);
+    toast.success(data.message);
+    await onChange();
+  });
+
+  const doRebuild = () => run("rebuild", async () => {
+    const { data } = await api.post(`/stellar/cosign/${cosign.id}/rebuild`);
+    toast.success(data.message);
+    await onChange();
+  });
+
+  const reviewLink = cosign ? `${window.location.origin}${cosign.review_path}` : "";
+  const copyLink = async () => {
+    try { await navigator.clipboard.writeText(reviewLink); toast.success("Signing link copied."); } catch { toast.error("Copy failed; select the link instead."); }
+  };
 
   const doVerify = () => run("verify", async () => {
     const { data } = await api.get(`/stellar/verify/${pkg.canonical_hash}`);
@@ -55,7 +82,7 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
     <div className="rounded-lg border border-slate-800 bg-slate-950/40 p-5" data-testid={`attestation-${pkg.id}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-sky-400" /><span className="font-mono text-xs uppercase tracking-widest text-slate-300">Stellar Attestation</span></div>
-        <StatusBadge value={st.verification_status || "NOT_SUBMITTED"} testid={`attestation-status-${pkg.id}`} />
+        <StatusBadge value={cosignOpen && !attested ? (cosign.status === "STALE" ? "STALE" : "AWAITING_REVIEWER") : st.verification_status || "NOT_SUBMITTED"} testid={`attestation-status-${pkg.id}`} />
       </div>
 
       {!finalized ? (
@@ -70,10 +97,12 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
       ) : (
         <dl className="mt-4 space-y-2 font-mono text-[11px]">
           <Item k="Version" v={`v${st.version}`} />
-          <Item k="Attested by" v={`${st.attester_name} · ${shortKey(st.attester_address)}`} />
+          <Item k={coSigned ? "Attestation account" : "Attested by"} v={`${st.attester_name} · ${shortKey(st.attester_address)}`} />
+          {coSigned && <Item k="Signed by TUGMA" v={shortKey(signerKey("tugma")) || "—"} />}
+          {coSigned && <Item k="Signed by reviewer" v={shortKey(signerKey("reviewer")) || "—"} />}
           <Item k="Ledger" v={st.ledger} />
           <Item k="Attest tx" v={<TxLink explorer={explorer} hash={st.transaction_hash} />} />
-          <Item k="Countersigned by" v={st.verifier_address ? `${st.verifier_name} · ${shortKey(st.verifier_address)}` : "Awaiting independent signer"} />
+          <Item k="Countersigned by" v={st.verifier_address ? `${st.verifier_name} · ${shortKey(st.verifier_address)}` : coSigned ? "Not needed: both keys were required (2-of-2)" : "Awaiting independent signer"} />
           {st.countersign_tx_hash && <Item k="Countersign tx" v={<TxLink explorer={explorer} hash={st.countersign_tx_hash} />} />}
           {st.verified_at && <Item k="Verified" v={shortDate(st.verified_at)} />}
         </dl>
@@ -88,6 +117,31 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
         </div>
       )}
 
+      {cosignOpen && (
+        <div className={`mt-4 rounded-md border p-3 ${cosign.status === "STALE" ? "border-rose-500/40 bg-rose-500/10" : "border-amber-500/40 bg-amber-500/10"}`} data-testid={`cosign-${pkg.id}`}>
+          <p className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-amber-200"><Users className="h-3.5 w-3.5" />
+            {cosign.status === "STALE" ? "Reviewer signature expired" : "Awaiting reviewer signature"}</p>
+          <dl className="mt-2 space-y-1.5 font-mono text-[11px]">
+            <Item k="Signed by TUGMA" v={shortKey(cosign.tugma_signer)} />
+            <Item k="Reviewer key" v={shortKey(cosign.reviewer_signer)} />
+            <Item k="Attestation account" v={shortKey(cosign.attestation_account)} />
+            <Item k="Reviewer can sign until" v={shortDate(cosign.expires_at)} />
+          </dl>
+          {cosign.status === "STALE" ? (
+            <p className="mt-2 text-xs leading-relaxed text-rose-200/90">{cosign.status_detail} Rebuild it and send the reviewer the new link.</p>
+          ) : (
+            <div className="mt-2 flex items-center gap-2">
+              <input readOnly value={reviewLink} onFocus={(e) => e.target.select()} data-testid={`cosign-link-${pkg.id}`}
+                className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950 px-2 py-1 font-mono text-[10px] text-slate-300" />
+              <button onClick={copyLink} className="inline-flex items-center gap-1 rounded border border-slate-700 px-2 py-1 text-[10px] text-slate-300 hover:border-slate-500"><Copy className="h-3 w-3" /> Copy</button>
+            </div>
+          )}
+          {can(user?.role, "package:attest") && (
+            <div className="mt-3"><Action onClick={doRebuild} busy={busy === "rebuild"} disabled={!!busy} icon={RefreshCw} testid={`cosign-rebuild-${pkg.id}`}>Rebuild transaction</Action></div>
+          )}
+        </div>
+      )}
+
       {finalized && (canAttest || canCountersign) && !wallet && (
         <p className="mt-4 font-mono text-[11px] text-amber-300/80">
           <Link to="/app/settings" className="underline">Link a Freighter wallet</Link> in Settings to sign.
@@ -98,6 +152,11 @@ export default function AttestationPanel({ pkg, stellarConfig, onChange }) {
         {canAttest && (
           <Action onClick={() => doSign("attest")} busy={busy === "attest"} disabled={!wallet || !!busy} primary testid={`attest-btn-${pkg.id}`}>
             {stale ? "Re-attest new hash" : "Attest on Stellar"}
+          </Action>
+        )}
+        {canRequestCosign && (
+          <Action onClick={doRequestCosign} busy={busy === "cosign"} disabled={!!busy} primary icon={Users} testid={`cosign-request-${pkg.id}`}>
+            Request two-party attestation
           </Action>
         )}
         {canCountersign && (

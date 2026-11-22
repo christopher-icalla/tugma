@@ -71,6 +71,12 @@ A co-signed attestation already has two independent signers, so it is not listed
 
 A transaction from the attestation account becomes impossible to submit when its time bounds pass or when any other transaction from the account lands first (its sequence number is used). The API checks both before submitting, and also maps the network's `txTooLate` and `txBadSeq` rejections. In each case it marks the request **STALE**, tells the reviewer why, and a TUGMA user can **Rebuild**: a new transaction is built and signed by TUGMA, the old request is marked superseded, and the reviewer signs the new one. Two packages can't be co-signed in parallel for the same reason: each request uses the account's next sequence number, so sign them one at a time (or rebuild).
 
+### The reviewer's signing step
+
+On **Reports**, a package that can be attested gets **Request two-party attestation** (only when the server has the feature configured). After TUGMA signs, the package's Stellar panel shows **Awaiting reviewer signature** with TUGMA's key, the reviewer key, the attestation account, the deadline and the signing link to send the reviewer. If the request goes stale it shows why, with **Rebuild transaction**. Once the reviewer signs, the panel shows **CO-SIGNED** with both signer keys, and the package timeline lists both steps (signed by TUGMA, signed by the reviewer) with the transaction link.
+
+The reviewer's page, `/review/<request id>`, shows exactly what is being signed: the contract call, package id and period, expected version, canonical SHA-256, attestation account, both signer keys, the network (Testnet passphrase), the transaction hash and the deadline. The reviewer connects their own wallet through [Stellar Wallets Kit](https://stellarwalletskit.dev/) (Freighter, xBull, Albedo, Lobstr, Hana and others, set to Testnet). The page refuses to sign with a wallet account other than the configured reviewer key and refuses any network but Testnet. The wallet signs the envelope, and only the signed envelope is sent back.
+
 ## 3. Enabling it
 
 Set all three on the API (blank or unset means off; setting only some is a startup error), then restart:

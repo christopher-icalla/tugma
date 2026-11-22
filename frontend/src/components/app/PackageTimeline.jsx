@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 
 const DOT = {
   generated: "bg-sky-400",
+  cosign: "bg-amber-400",
   attested: "bg-emerald-400",
   countersigned: "bg-emerald-300",
   exported: "bg-slate-400",

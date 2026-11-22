@@ -11,6 +11,7 @@ import ControlsPublic from "@/pages/public/ControlsPublic";
 import StellarPublic from "@/pages/public/StellarPublic";
 import SecurityPublic from "@/pages/public/SecurityPublic";
 import Contact from "@/pages/public/Contact";
+import ReviewSign from "@/pages/public/ReviewSign";
 
 import Login from "@/pages/auth/Login";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
@@ -44,6 +45,8 @@ function App() {
             <Route path="/stellar" element={<StellarPublic />} />
             <Route path="/security" element={<SecurityPublic />} />
             <Route path="/contact" element={<Contact />} />
+            {/* Independent reviewer's signing step for a two-party attestation (no login) */}
+            <Route path="/review/:id" element={<ReviewSign />} />
 
             {/* Auth */}
             <Route path="/login" element={<Login />} />
