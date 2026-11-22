@@ -5,7 +5,7 @@
  * user's wallet (Freighter) to sign, submits the signed envelope, and reads
  * contract state through simulation.
  */
-import { BadRequestException, BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, BadGatewayException, ConflictException, Injectable, Logger } from '@nestjs/common';
 import {
   Account, Address, BASE_FEE, Contract, FeeBumpTransaction, Keypair, nativeToScVal, rpc, scValToNative,
   StrKey, Transaction, TransactionBuilder, xdr,
@@ -36,6 +36,29 @@ export type OnChainAttestation = {
 };
 
 export type SubmitResult = { hash: string; ledger: number; returnValue: unknown };
+
+/** A Stellar account's signers and thresholds, as the ledger holds them. */
+export type AccountSigners = {
+  account_id: string;
+  sequence: string;
+  master_weight: number;
+  thresholds: { low: number; med: number; high: number };
+  signers: { key: string; weight: number }[];
+};
+
+/**
+ * The network refused a transaction because it can no longer be valid: its
+ * sequence number was used or overtaken (txBadSeq), or its time bounds passed
+ * (txTooLate). Signing it again won't help; it has to be rebuilt.
+ */
+export class StaleTransactionError extends ConflictException {
+  constructor(
+    readonly reason: 'sequence' | 'expired',
+    message: string,
+  ) {
+    super(message);
+  }
+}
 
 // Any syntactically valid account works as the source of a read-only simulation.
 const SIMULATION_SOURCE = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
@@ -134,6 +157,11 @@ export class SorobanService {
    * unsigned transaction for the user's wallet to sign.
    */
   async prepare(source: string, method: string, ...args: xdr.ScVal[]): Promise<Transaction> {
+    return this.prepareTimed(source, 300, method, ...args);
+  }
+
+  /** prepare() with time bounds of `timeoutSeconds` from now, for transactions that wait for a second signer. */
+  async prepareTimed(source: string, timeoutSeconds: number, method: string, ...args: xdr.ScVal[]): Promise<Transaction> {
     const account = await this.rpc(() => this.server.getAccount(source), (e) =>
       /not found/i.test(String(e))
         ? new BadRequestException(`Stellar account ${source} does not exist on this network yet. Fund it first (testnet: Friendbot).`)
@@ -141,7 +169,7 @@ export class SorobanService {
     );
     const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase: this.networkPassphrase })
       .addOperation(this.contract.call(method, ...args))
-      .setTimeout(300)
+      .setTimeout(timeoutSeconds)
       .build();
     const sim = await this.rpc(() => this.server.simulateTransaction(tx));
     if (rpc.Api.isSimulationError(sim)) {
@@ -163,10 +191,41 @@ export class SorobanService {
     return tx;
   }
 
-  async submit(tx: Transaction): Promise<SubmitResult> {
+  /** The account's current sequence number. */
+  async accountSequence(address: string): Promise<string> {
+    const account = await this.rpc(() => this.server.getAccount(address));
+    return account.sequenceNumber();
+  }
+
+  /** The account's signers, weights and thresholds, read from its ledger entry through Soroban RPC. */
+  async accountSigners(address: string): Promise<AccountSigners | null> {
+    let missing = false;
+    const entry = await this.rpc(
+      () => this.server.getAccountEntry(address),
+      (e) => ((missing = /not found/i.test(String(e))) ? new BadRequestException(`Stellar account ${address} does not exist.`) : undefined),
+    ).catch((e) => {
+      if (missing) return null;
+      throw e;
+    });
+    return entry ? accountSignersFromEntry(entry) : null;
+  }
+
+  /**
+   * Sends a signed transaction and waits for the result. With `staleAware`, a
+   * transaction the network can never accept (used sequence number, expired
+   * time bounds) raises StaleTransactionError so the caller can offer a rebuild.
+   */
+  async submit(tx: Transaction, opts: { staleAware?: boolean } = {}): Promise<SubmitResult> {
     const sent = await this.rpc(() => this.server.sendTransaction(tx));
     if (sent.status === 'ERROR' || sent.status === 'TRY_AGAIN_LATER') {
       this.logger.warn(`sendTransaction ${sent.status}: ${sent.errorResult?.toXDR('base64') ?? ''}`);
+      const code = sent.status === 'ERROR' ? resultCode(sent.errorResult) : null;
+      if (opts.staleAware && code === 'txBadSeq') {
+        throw new StaleTransactionError('sequence', 'The attestation account has used this sequence number already, so the transaction can no longer be accepted. Rebuild it and sign again.');
+      }
+      if (opts.staleAware && code === 'txTooLate') {
+        throw new StaleTransactionError('expired', 'The transaction passed its time bounds before it was submitted. Rebuild it and sign again.');
+      }
       throw new BadRequestException(
         sent.status === 'TRY_AGAIN_LATER'
           ? 'The Stellar network is busy. Try again in a few seconds.'
@@ -240,6 +299,51 @@ export function attestTxHashFromEvents(
     if (Number(d.version) === version && Buffer.from(d.hash).toString('hex') === hashHex.toLowerCase()) return ev.txHash;
   }
   return null;
+}
+
+/** The top-level result code of a rejected transaction (e.g. txBadSeq), if any. */
+function resultCode(result: xdr.TransactionResult | undefined): string | null {
+  try {
+    return result ? result.result.type : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Thresholds are stored as four bytes: [master weight, low, medium, high]. */
+export function accountSignersFromEntry(entry: xdr.AccountEntry): AccountSigners {
+  const t = entry.thresholds.value;
+  const signers: AccountSigners['signers'] = [];
+  for (const s of entry.signers) {
+    if (s.key.type === 'signerKeyTypeEd25519' && 'ed25519' in s.key) {
+      signers.push({ key: StrKey.encodeEd25519PublicKey(Buffer.from(s.key.ed25519.value)), weight: s.weight });
+    }
+  }
+  return {
+    account_id: StrKey.encodeEd25519PublicKey(Buffer.from(entry.accountId.ed25519.value)),
+    sequence: entry.seqNum.toString(),
+    master_weight: t[0],
+    thresholds: { low: t[1], med: t[2], high: t[3] },
+    signers,
+  };
+}
+
+/**
+ * Whether an account needs both `a` and `b` to sign anything: its master key
+ * and every signer weigh less than the lowest threshold, and `a` and `b`
+ * together reach the highest one.
+ */
+export function requiresBoth(acct: AccountSigners, a: string, b: string): boolean {
+  const { low, med, high } = acct.thresholds;
+  const lowest = Math.min(low, med, high);
+  const weight = (k: string) => acct.signers.find((s) => s.key === k)?.weight ?? 0;
+  return (
+    lowest > 0 &&
+    acct.master_weight < lowest &&
+    acct.signers.every((s) => s.weight < lowest) &&
+    a !== b &&
+    weight(a) + weight(b) >= Math.max(low, med, high)
+  );
 }
 
 function contractErrorCode(message: string): number | null {

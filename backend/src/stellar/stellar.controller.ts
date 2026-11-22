@@ -4,16 +4,20 @@ import { CurrentUser, Public, PublicUser, RequirePerm } from '../auth/auth.guard
 import { parse } from '../common/util';
 import { PrismaService } from '../prisma.service';
 import { AttestationService } from './attestation.service';
+import { CosignService } from './cosign.service';
 import { PublicLookupRateLimit, StellarWriteRateLimit } from '../common/rate-limits';
 
 const ChallengeInput = z.object({ address: z.string().trim() });
 const LinkInput = z.object({ challenge: z.string(), signature: z.string().min(1) });
 const SubmitInput = z.object({ pending_id: z.string().uuid(), signed_xdr: z.string().min(1) });
+const CosignId = z.string().uuid();
+const CosignSubmitInput = z.object({ signed_xdr: z.string().min(1).max(20_000) });
 
 @Controller('api/stellar')
 export class StellarController {
   constructor(
     private readonly attestations: AttestationService,
+    private readonly cosign: CosignService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -97,6 +101,41 @@ export class StellarController {
   @RequirePerm('package:attest')
   sync(@CurrentUser() user: PublicUser, @Param('id') id: string) {
     return this.attestations.sync(user, id);
+  }
+
+  // ---------------------------------------- two-party (multisig) attestation
+  // Every route answers 404 unless MULTISIG_* is configured.
+
+  @StellarWriteRateLimit()
+  @Post('packages/:id/cosign/request')
+  @HttpCode(200)
+  @RequirePerm('package:attest')
+  requestCosign(@CurrentUser() user: PublicUser, @Param('id') id: string) {
+    return this.cosign.request(user, id);
+  }
+
+  @StellarWriteRateLimit()
+  @Post('cosign/:id/rebuild')
+  @HttpCode(200)
+  @RequirePerm('package:attest')
+  rebuildCosign(@CurrentUser() user: PublicUser, @Param('id') id: string) {
+    return this.cosign.rebuild(user, parse(CosignId, id));
+  }
+
+  /** Public: the reviewer may have no TUGMA login. The id is unguessable, and the reviewer's signature is the authorization. */
+  @Public()
+  @PublicLookupRateLimit()
+  @Get('cosign/:id')
+  getCosign(@Param('id') id: string) {
+    return this.cosign.get(parse(CosignId, id));
+  }
+
+  @Public()
+  @StellarWriteRateLimit()
+  @Post('cosign/:id/submit')
+  @HttpCode(200)
+  submitCosign(@Param('id') id: string, @Body() body: unknown) {
+    return this.cosign.submitReviewer(parse(CosignId, id), parse(CosignSubmitInput, body).signed_xdr);
   }
 
   /** Role is re-checked through the pending transaction, which only its preparer can submit. */

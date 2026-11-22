@@ -12,3 +12,5 @@ process.env.DEMO_USER_PASSWORD = 'demo-test-password';
 process.env.RATE_LIMIT ??= 'off';
 process.env.FRONTEND_URL ??= 'http://localhost:3000';
 process.env.COOKIE_SECURE ??= 'false';
+// Two-party attestation is off unless a test file turns it on itself (test/cosign.e2e-spec.ts).
+for (const key of ['MULTISIG_ATTESTATION_ACCOUNT', 'MULTISIG_TUGMA_SIGNER_SECRET', 'MULTISIG_REVIEWER_PUBLIC_KEY', 'MULTISIG_COSIGN_TTL_HOURS']) delete process.env[key];

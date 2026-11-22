@@ -22,7 +22,8 @@ export class FollowUpsService {
   async load(orgId: string, now = new Date()) {
     const [exceptions, attestations] = await Promise.all([
       this.prisma.controlException.findMany({ where: { organization_id: orgId, status: { in: OPEN_STATES } } }),
-      this.prisma.stellarAttestation.findMany({ where: { organization_id: orgId, verifier_address: null } }),
+      // A co-signed (two-party) attestation already has its second signer.
+      this.prisma.stellarAttestation.findMany({ where: { organization_id: orgId, verifier_address: null, verification_status: { not: 'CO_SIGNED' } } }),
     ]);
     return followUps(now, exceptions, attestations);
   }

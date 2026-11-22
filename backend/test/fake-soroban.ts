@@ -1,7 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import { Account, BASE_FEE, Keypair, Transaction, TransactionBuilder, xdr, scValToNative } from '@stellar/stellar-sdk';
 import { createHash } from 'node:crypto';
-import { CONTRACT_ERRORS, OnChainAttestation, SorobanService, SubmitResult } from '../src/stellar/soroban.service';
+import { AccountSigners, CONTRACT_ERRORS, OnChainAttestation, SorobanService, StaleTransactionError, SubmitResult } from '../src/stellar/soroban.service';
+
+/** A classic account with extra signers, as the ledger would enforce it. */
+type FakeAccount = { sequence: bigint; masterWeight: number; signers: Map<string, number>; thresholds: { low: number; med: number; high: number } };
 
 /**
  * In-memory stand-in for the attestation contract, so the API's prepare ->
@@ -19,6 +22,10 @@ export class FakeSoroban extends SorobanService {
   private txHashes = new Map<string, string>();
   /** Set to make event lookups behave as if the ledger is past the RPC's retention window. */
   eventsExpired = false;
+  /** Multisig accounts (the two-party attestation account). Transactions from them need signatures meeting their thresholds. */
+  accounts = new Map<string, FakeAccount>();
+  /** Overrides "now" for time-bound checks at submit. */
+  now = () => Date.now();
 
   private key = (org: string, pkg: string, v: number) => `${org}|${pkg}|${v}`;
 
@@ -50,21 +57,61 @@ export class FakeSoroban extends SorobanService {
     return this.txHashes.get(this.key(org, pkg, version)) ?? null;
   }
 
+  async accountSequence(address: string) {
+    return String(this.accounts.get(address)?.sequence ?? 0n);
+  }
+
+  async accountSigners(address: string): Promise<AccountSigners | null> {
+    const a = this.accounts.get(address);
+    if (!a) return null;
+    return {
+      account_id: address, sequence: String(a.sequence), master_weight: a.masterWeight, thresholds: { ...a.thresholds },
+      signers: [...a.signers].map(([key, weight]) => ({ key, weight })),
+    };
+  }
+
   async prepare(source: string, method: string, ...args: xdr.ScVal[]): Promise<Transaction> {
+    return this.prepareTimed(source, 300, method, ...args);
+  }
+
+  async prepareTimed(source: string, timeoutSeconds: number, method: string, ...args: xdr.ScVal[]): Promise<Transaction> {
     const native = args.map((a) => scValToNative(a));
     this.apply(source, method, native, true);
-    const tx = new TransactionBuilder(new Account(source, String(++this.sequence)), { fee: BASE_FEE, networkPassphrase: this.networkPassphrase })
+    const multisig = this.accounts.get(source);
+    const sequence = multisig ? String(multisig.sequence) : String(++this.sequence);
+    const tx = new TransactionBuilder(new Account(source, sequence), { fee: BASE_FEE, networkPassphrase: this.networkPassphrase })
       .addOperation(this.contract.call(method, ...args))
-      .setTimeout(300)
+      .setTimeout(timeoutSeconds)
       .build();
     this.prepared.set(Buffer.from(tx.hash()).toString('hex'), { method, args: native });
     return tx;
   }
 
-  async submit(tx: Transaction): Promise<SubmitResult> {
+  /** What the network checks for a multisig source: sequence, time bounds, then signature weight against the thresholds. */
+  private checkMultisig(tx: Transaction, a: FakeAccount, staleAware: boolean) {
+    const stale = (reason: 'sequence' | 'expired') => {
+      if (staleAware) throw new StaleTransactionError(reason, reason === 'sequence' ? 'txBadSeq' : 'txTooLate');
+      throw new BadRequestException(`FakeSoroban: ${reason === 'sequence' ? 'txBadSeq' : 'txTooLate'}`);
+    };
+    if (BigInt(tx.sequence) !== a.sequence + 1n) stale('sequence');
+    const maxTime = Number(tx.timeBounds?.maxTime ?? 0);
+    if (maxTime && Math.floor(this.now() / 1000) > maxTime) stale('expired');
+    const keys = new Map([...a.signers, [tx.source, a.masterWeight]]);
+    let weight = 0;
+    for (const [key, w] of keys) {
+      if (tx.signatures.some((s) => Keypair.fromPublicKey(key).verify(tx.hash(), s.signature))) weight += w;
+    }
+    if (weight < Math.max(a.thresholds.low, a.thresholds.med)) throw new BadRequestException('FakeSoroban: txBadAuth (signature weight below the threshold)');
+  }
+
+  async submit(tx: Transaction, opts: { staleAware?: boolean } = {}): Promise<SubmitResult> {
     const call = this.prepared.get(Buffer.from(tx.hash()).toString('hex'));
     if (!call) throw new BadRequestException('FakeSoroban: unknown transaction');
-    if (!tx.signatures.some((s) => Keypair.fromPublicKey(tx.source).verify(tx.hash(), s.signature))) {
+    const multisig = this.accounts.get(tx.source);
+    if (multisig) {
+      this.checkMultisig(tx, multisig, !!opts.staleAware);
+      multisig.sequence += 1n;
+    } else if (!tx.signatures.some((s) => Keypair.fromPublicKey(tx.source).verify(tx.hash(), s.signature))) {
       throw new BadRequestException('FakeSoroban: missing source signature');
     }
     const returnValue = this.apply(tx.source, call.method, call.args, false);

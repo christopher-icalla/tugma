@@ -1,5 +1,5 @@
 import { Keypair, nativeToScVal, xdr } from '@stellar/stellar-sdk';
-import { attestTxHashFromEvents } from './soroban.service';
+import { AccountSigners, attestTxHashFromEvents, requiresBoth, SorobanService, StaleTransactionError } from './soroban.service';
 
 const HASH = 'ab'.repeat(32);
 const attester = Keypair.random().publicKey();
@@ -35,5 +35,49 @@ describe('attestTxHashFromEvents', () => {
     expect(attestTxHashFromEvents([{ txHash: 'tx-1', value: attested(1, HASH) }], 2, HASH)).toBeNull();
     expect(attestTxHashFromEvents([{ txHash: 'tx-c', value: countersigned(1) }], 1, HASH)).toBeNull();
     expect(attestTxHashFromEvents([], 1, HASH)).toBeNull();
+  });
+});
+
+describe('requiresBoth (two-party attestation account)', () => {
+  const a = Keypair.random().publicKey();
+  const b = Keypair.random().publicKey();
+  const account = (over: Partial<AccountSigners> = {}): AccountSigners => ({
+    account_id: Keypair.random().publicKey(), sequence: '1', master_weight: 0, thresholds: { low: 2, med: 2, high: 2 },
+    signers: [{ key: a, weight: 1 }, { key: b, weight: 1 }], ...over,
+  });
+
+  it('holds for two weight-1 signers, master weight 0 and thresholds of 2', () => {
+    expect(requiresBoth(account(), a, b)).toBe(true);
+  });
+
+  it('fails when one key alone is enough, or both together are not', () => {
+    expect(requiresBoth(account({ master_weight: 2 }), a, b)).toBe(false);
+    expect(requiresBoth(account({ thresholds: { low: 1, med: 2, high: 2 } }), a, b)).toBe(false);
+    expect(requiresBoth(account({ signers: [{ key: a, weight: 2 }, { key: b, weight: 1 }] }), a, b)).toBe(false);
+    expect(requiresBoth(account({ thresholds: { low: 2, med: 2, high: 3 } }), a, b)).toBe(false);
+    expect(requiresBoth(account({ thresholds: { low: 0, med: 0, high: 0 } }), a, b)).toBe(false);
+    expect(requiresBoth(account(), a, Keypair.random().publicKey())).toBe(false);
+    expect(requiresBoth(account(), a, a)).toBe(false);
+  });
+});
+
+describe('submit with staleAware', () => {
+  const rejected = (code: string) => {
+    const svc = new SorobanService();
+    (svc as unknown as { server: unknown }).server = {
+      sendTransaction: async () => ({ status: 'ERROR', hash: 'h', errorResult: { result: { type: code }, toXDR: () => '' } }),
+    };
+    return svc;
+  };
+  const tx = {} as never;
+
+  it('turns a used sequence number or passed time bounds into StaleTransactionError', async () => {
+    await expect(rejected('txBadSeq').submit(tx, { staleAware: true })).rejects.toMatchObject({ reason: 'sequence' });
+    await expect(rejected('txTooLate').submit(tx, { staleAware: true })).rejects.toBeInstanceOf(StaleTransactionError);
+  });
+
+  it('keeps the old message for every other caller and code', async () => {
+    await expect(rejected('txBadSeq').submit(tx)).rejects.toThrow(/may have expired or the account sequence changed/);
+    await expect(rejected('txBadAuth').submit(tx, { staleAware: true })).rejects.not.toBeInstanceOf(StaleTransactionError);
   });
 });

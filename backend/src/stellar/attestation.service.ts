@@ -9,6 +9,7 @@ import { AuditService } from '../common/audit.service';
 import { config } from '../config';
 import { PrismaService } from '../prisma.service';
 import { addr, bytes32, isAccountId, OnChainAttestation, SorobanService, str, u32 } from './soroban.service';
+import { TugmaSigner } from './tugma-signer';
 
 const PENDING_TTL_MS = 5 * 60_000;
 const CHALLENGE_TTL_S = 5 * 60;
@@ -21,16 +22,22 @@ export class AttestationService {
     private readonly prisma: PrismaService,
     private readonly soroban: SorobanService,
     private readonly audit: AuditService,
+    private readonly signer: TugmaSigner,
   ) {}
 
   publicConfig() {
     const cfg = config();
+    const ms = this.signer.settings;
     return {
       network: cfg.STELLAR_NETWORK,
       network_passphrase: cfg.STELLAR_NETWORK_PASSPHRASE,
       rpc_url: cfg.STELLAR_RPC_URL,
       contract_id: cfg.STELLAR_CONTRACT_ID,
       explorer_url: cfg.STELLAR_EXPLORER_URL,
+      // Present only when two-party attestation is configured (public keys only).
+      ...(this.signer.enabled && ms
+        ? { multisig: { attestation_account: ms.account, tugma_signer: this.signer.publicKey, reviewer_signer: ms.reviewer, ttl_hours: ms.ttlHours } }
+        : {}),
     };
   }
 
@@ -43,6 +50,7 @@ export class AttestationService {
       orderBy: { version: 'desc' },
     });
     const cfg = config();
+    const cosigns = await this.latestCosigns(packages.map((p) => p.id));
     return packages.map((p) => {
       const attestations = rows.filter((a) => a.evidence_package_id === p.id);
       const latest = attestations[0];
@@ -53,8 +61,31 @@ export class AttestationService {
             attestation_hash: p.canonical_hash, transaction_hash: null, ledger: null, stellar_account: null,
             submitted_at: null, verified_at: null, verification_status: 'NOT_SUBMITTED', hash_matches_package: false,
           };
-      return { ...p, stellar, attestations };
+      return { ...p, stellar, attestations, ...(cosigns ? { cosign: cosigns.get(p.id) ?? null } : {}) };
     });
+  }
+
+  /** The latest two-party co-sign request per package; null when the feature is off. */
+  private async latestCosigns(packageIds: string[]) {
+    if (!this.signer.enabled) return null;
+    const rows = await this.prisma.stellarCosignRequest.findMany({
+      where: { evidence_package_id: { in: packageIds } },
+      orderBy: { created_at: 'desc' },
+    });
+    const latest = new Map<string, (typeof rows)[number]>();
+    for (const r of rows) if (!latest.has(r.evidence_package_id)) latest.set(r.evidence_package_id, r);
+    const now = new Date();
+    return new Map(
+      [...latest].map(([id, r]) => {
+        const expired = r.status === 'AWAITING_REVIEWER' && r.expires_at <= now;
+        return [id, {
+          id: r.id, status: expired ? 'STALE' : r.status, status_detail: expired ? 'The transaction expired before the reviewer signed it.' : r.status_detail,
+          canonical_hash: r.canonical_hash, attestation_account: r.attestation_account, tugma_signer: r.tugma_signer,
+          reviewer_signer: r.reviewer_signer, expires_at: r.expires_at, created_at: r.created_at, requested_by_name: r.requested_by_name,
+          submitted_tx_hash: r.submitted_tx_hash, review_path: `/review/${r.id}`,
+        }];
+      }),
+    );
   }
 
   // ------------------------------------------------------ wallet linking
@@ -283,7 +314,7 @@ export class AttestationService {
    * The opaque identifier the contract knows this organization by. Every contract
    * call uses it instead of the readable organization id (see docs/onchain-footprint.md).
    */
-  private async chainOrgId(user: PublicUser): Promise<string> {
+  async chainOrgId(user: PublicUser): Promise<string> {
     const org = await this.prisma.organization.findUnique({ where: { id: user.organization_id }, select: { chain_org_id: true } });
     if (!org) throw new NotFoundException('Organization not found.');
     return org.chain_org_id;
@@ -300,10 +331,18 @@ export class AttestationService {
     return pkg;
   }
 
-  private async finalizedPackage(user: PublicUser, id: string) {
+  async finalizedPackage(user: PublicUser, id: string) {
     const pkg = await this.package(user, id);
     if (pkg.status !== 'FINALIZED') throw new BadRequestException('Only generated (FINALIZED) packages can be anchored on-chain.');
     return pkg;
+  }
+
+  /** Both signers of a co-signed version, from its co-sign request (or the current settings, for one made elsewhere). */
+  private async multisigSigners(hash: string) {
+    const req = await this.prisma.stellarCosignRequest.findFirst({ where: { canonical_hash: hash, status: 'CO_SIGNED' } });
+    const tugma = req?.tugma_signer ?? this.signer.publicKey;
+    const reviewer = req?.reviewer_signer ?? this.signer.settings?.reviewer;
+    return tugma && reviewer ? [{ role: 'tugma', key: tugma }, { role: 'reviewer', key: reviewer }] : undefined;
   }
 
   private async savePending(user: PublicUser, packageId: string, action: Action, txHash: string, params: object, xdrB64: string) {
@@ -329,10 +368,12 @@ export class AttestationService {
     const transactionHash =
       existing?.transaction_hash ??
       (await this.soroban.findAttestTxHash(chain.org, chain.package_id, chain.version, chain.hash, chain.attested_ledger));
+    // A version attested by the two-party attestation account stays CO_SIGNED until someone countersigns it.
+    const multisig = existing?.verification_status === 'CO_SIGNED' || (!!this.signer.settings && chain.attester === this.signer.settings.account);
     const onchain = {
       attestation_hash: chain.hash, attester_address: chain.attester, ledger: chain.attested_ledger,
       verifier_address: chain.verifier, verified_at: chain.verified_at ? new Date(chain.verified_at) : null,
-      verification_status: chain.verifier ? 'VERIFIED' : 'ATTESTED',
+      verification_status: chain.verifier ? 'VERIFIED' : multisig ? 'CO_SIGNED' : 'ATTESTED',
       verifier_user_id: verifier?.id ?? existing?.verifier_user_id ?? null,
       verifier_name: chain.verifier ? verifier?.name ?? existing?.verifier_name ?? 'External signer' : null,
     };
@@ -346,7 +387,8 @@ export class AttestationService {
       data: {
         ...onchain, organization_id: pkg.organization_id, evidence_package_id: pkg.id, network: config().STELLAR_NETWORK,
         contract_id: this.soroban.contractId, version: chain.version, attester_user_id: attester?.id ?? null,
-        attester_name: attester?.name ?? 'External signer',
+        attester_name: attester?.name ?? (multisig ? 'TUGMA + independent reviewer' : 'External signer'),
+        ...(multisig ? { multisig_signers: await this.multisigSigners(chain.hash) } : {}),
         transaction_hash: transactionHash, // recovered from the Attested event; null only past RPC retention
         submitted_at: new Date(chain.attested_at),
       },

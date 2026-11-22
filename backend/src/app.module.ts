@@ -18,8 +18,10 @@ import { HealthController } from './health.controller';
 import { PrismaService } from './prisma.service';
 import { SeedService } from './seed/seed.service';
 import { AttestationService } from './stellar/attestation.service';
+import { CosignService } from './stellar/cosign.service';
 import { SorobanService } from './stellar/soroban.service';
 import { StellarController } from './stellar/stellar.controller';
+import { TugmaSigner } from './stellar/tugma-signer';
 
 @Module({
   imports: [
@@ -49,7 +51,9 @@ import { StellarController } from './stellar/stellar.controller';
     SchedulerService,
     SeedService,
     SorobanService,
+    TugmaSigner,
     AttestationService,
+    CosignService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: DetailExceptionFilter },

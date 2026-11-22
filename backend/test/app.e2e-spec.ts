@@ -478,14 +478,36 @@ describe('HTTP hardening', () => {
 });
 
 describe('key custody', () => {
-  it('never loads a Stellar secret key in application code', () => {
+  it('loads a Stellar secret key only in the opt-in two-party signer', () => {
     const walk = (dir: string): string[] =>
       readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
         e.isDirectory() ? walk(join(dir, e.name)) : e.name.endsWith('.spec.ts') ? [] : [join(dir, e.name)]);
+    const signer = join(__dirname, '../src/stellar/tugma-signer.ts');
+    const settings = join(__dirname, '../src/config.ts'); // validates the setting, never uses it
     for (const file of walk(join(__dirname, '../src'))) {
+      if (file === signer) continue;
       const src = readFileSync(file, 'utf8');
       expect(src).not.toMatch(/Keypair\.fromSecret|STELLAR_SECRET|\.sign\(\s*Keypair/);
+      if (file !== settings) expect(src).not.toMatch(/tugmaSecret|MULTISIG_TUGMA_SIGNER_SECRET/);
     }
+    // TUGMA's two-party key (off unless configured): loaded once, kept in a private field, never logged.
+    const src = readFileSync(signer, 'utf8');
+    expect(src.match(/Keypair\.fromSecret\(/g)).toHaveLength(1);
+    expect(src).toMatch(/readonly #keypair/);
+    expect(src).not.toMatch(/console\.|Logger|\.secret\(\)/);
+  });
+});
+
+describe('two-party attestation (off by default)', () => {
+  it('is not offered, and its routes answer 404, without the MULTISIG_* settings', async () => {
+    const cfg = (await request(app.getHttpServer()).get('/api/stellar/config')).body;
+    expect(cfg.multisig).toBeUndefined();
+    const pkg = (await agents.compliance.get('/api/evidence-packages')).body.packages.find((p: { status: string }) => p.status === 'FINALIZED');
+    expect(pkg).not.toHaveProperty('cosign');
+    expect((await agents.compliance.post(`/api/stellar/packages/${pkg.id}/cosign/request`)).status).toBe(404);
+    const id = '00000000-0000-4000-8000-000000000000';
+    expect((await request(app.getHttpServer()).get(`/api/stellar/cosign/${id}`)).status).toBe(404);
+    expect((await agents.compliance.post(`/api/stellar/cosign/${id}/submit`).send({ signed_xdr: 'AAAA' })).status).toBe(404);
   });
 });
 
@@ -505,7 +527,7 @@ describe('follow-ups and reminders', () => {
     expect(body.ageing.overdue_30_plus).toBeGreaterThanOrEqual(1);
     expect(body.overdue[0]).toMatchObject({ exception_code: open!.exception_code, bucket: 'overdue_30_plus' });
     expect(body.overdue[0].days_overdue).toBeGreaterThanOrEqual(39);
-    const pending = await prisma.stellarAttestation.count({ where: { organization_id: DEMO_ORG_ID, verifier_address: null } });
+    const pending = await prisma.stellarAttestation.count({ where: { organization_id: DEMO_ORG_ID, verifier_address: null, verification_status: { not: 'CO_SIGNED' } } });
     expect(body.awaiting_countersign).toHaveLength(pending);
     expect(body.email_configured).toBe(false);
   });

@@ -367,6 +367,8 @@ model StellarAttestation {
   countersign_ledger  Int?
   verified_at         DateTime?
   verification_status String
+  // Two-party attestation only: [{ role: "tugma" | "reviewer", key: "G..." }]
+  multisig_signers    Json?
 
   @@unique([evidence_package_id, version])
   @@map("stellar_attestations")
@@ -387,6 +389,40 @@ model StellarPendingTx {
 
   @@index([user_id])
   @@map("stellar_pending_txs")
+}
+
+/// A two-party attestation waiting for (or done with) the independent reviewer's
+/// signature. `xdr` is the transaction envelope signed by TUGMA only; the reviewer
+/// signs it in their own wallet and the API submits it once both signatures are on.
+model StellarCosignRequest {
+  id                  String    @id @default(uuid())
+  organization_id     String
+  evidence_package_id String
+  canonical_hash      String
+  period_start        String
+  period_end          String
+  expected_version    Int
+  attestation_account String
+  tugma_signer        String
+  reviewer_signer     String
+  network_passphrase  String
+  tx_hash             String    @unique
+  xdr                 String
+  sequence            String
+  expires_at          DateTime
+  // AWAITING_REVIEWER | SUBMITTING | CO_SIGNED | STALE | SUPERSEDED
+  status              String
+  status_detail       String?
+  requested_by_id     String
+  requested_by_name   String
+  created_at          DateTime  @default(now())
+  reviewer_signed_at  DateTime?
+  submitted_tx_hash   String?
+  ledger              Int?
+  version             Int?
+
+  @@index([evidence_package_id, created_at])
+  @@map("stellar_cosign_requests")
 }
 
 // ------------------------------------------------------------------- audit

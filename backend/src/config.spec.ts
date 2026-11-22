@@ -1,4 +1,5 @@
-import { configSchema } from './config';
+import { Keypair } from '@stellar/stellar-sdk';
+import { configSchema, multisigSettings } from './config';
 
 const base = {
   DATABASE_URL: 'postgresql://localhost/tugma_test',
@@ -32,5 +33,30 @@ describe('config validation', () => {
     expect(configSchema.parse({ ...base, STELLAR_NETWORK: 'testnet' }).STELLAR_NETWORK_PASSPHRASE).toBe(
       'Test SDF Network ; September 2015',
     );
+  });
+});
+
+describe('two-party attestation settings', () => {
+  const account = Keypair.random().publicKey();
+  const reviewer = Keypair.random().publicKey();
+  const secret = Keypair.random().secret();
+  const all = { MULTISIG_ATTESTATION_ACCOUNT: account, MULTISIG_TUGMA_SIGNER_SECRET: secret, MULTISIG_REVIEWER_PUBLIC_KEY: reviewer };
+
+  it('is off when none are set, including blank values from .env.example', () => {
+    expect(multisigSettings(configSchema.parse(base))).toBeNull();
+    expect(multisigSettings(configSchema.parse({ ...base, MULTISIG_ATTESTATION_ACCOUNT: '', MULTISIG_TUGMA_SIGNER_SECRET: ' ', MULTISIG_REVIEWER_PUBLIC_KEY: '' }))).toBeNull();
+  });
+
+  it('is on with all three, with a 24-hour signing window by default', () => {
+    expect(multisigSettings(configSchema.parse({ ...base, ...all }))).toEqual({ account, tugmaSecret: secret, reviewer, ttlHours: 24 });
+  });
+
+  it('refuses a partial setup, swapped key types and a reused key', () => {
+    expect(() => multisigSettings(configSchema.parse({ ...base, MULTISIG_ATTESTATION_ACCOUNT: account }))).toThrow(/all of/);
+    const swapped = configSchema.safeParse({ ...base, ...all, MULTISIG_TUGMA_SIGNER_SECRET: reviewer, MULTISIG_REVIEWER_PUBLIC_KEY: secret });
+    expect(swapped.success).toBe(false);
+    // Errors name the setting but never echo its value.
+    expect(JSON.stringify(swapped.error)).not.toContain(secret);
+    expect(() => multisigSettings(configSchema.parse({ ...base, ...all, MULTISIG_REVIEWER_PUBLIC_KEY: account }))).toThrow(/must differ/);
   });
 });

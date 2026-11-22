@@ -49,6 +49,8 @@ The `org` argument is the organization's opaque on-chain id (`org_` + 32 hex), s
 
 Point the API at a different deployment with `STELLAR_CONTRACT_ID`.
 
+Optional two-party attestation needs no contract change: a 2-of-2 multisig account (TUGMA's key + an independent reviewer's key) is authorized with `add_signer` and attests as its own transaction source, so `attester.require_auth()` holds only when both keys have signed. See [`docs/two-party-attestation.md`](../docs/two-party-attestation.md).
+
 ## Build & test
 
 ```sh
