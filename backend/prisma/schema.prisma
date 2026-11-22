@@ -406,7 +406,8 @@ model StellarCosignRequest {
   tugma_signer        String
   reviewer_signer     String
   network_passphrase  String
-  tx_hash             String    @unique
+  // Not unique: rebuilding a request can yield the identical transaction (same sequence and time bounds).
+  tx_hash             String
   xdr                 String
   sequence            String
   expires_at          DateTime
@@ -422,6 +423,7 @@ model StellarCosignRequest {
   version             Int?
 
   @@index([evidence_package_id, created_at])
+  @@index([tx_hash])
   @@map("stellar_cosign_requests")
 }
 

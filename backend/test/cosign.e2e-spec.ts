@@ -142,7 +142,7 @@ describe('two-party attestation', () => {
       package: { id: pkg.id, canonical_hash: pkg.canonical_hash, expected_version: 1, period_start: '2025-01-01' },
     });
     expect(res.body.request.requested_by_name).toBeUndefined();
-    expect((await anon().get('/api/stellar/cosign/not-a-uuid')).status).toBe(400);
+    expect((await anon().get('/api/stellar/cosign/not-a-uuid')).status).toBe(422);
     expect((await anon().get('/api/stellar/cosign/00000000-0000-4000-8000-000000000000')).status).toBe(404);
   });
 

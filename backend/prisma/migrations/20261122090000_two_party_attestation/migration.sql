@@ -34,8 +34,8 @@ CREATE TABLE "stellar_cosign_requests" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "stellar_cosign_requests_tx_hash_key" ON "stellar_cosign_requests"("tx_hash");
+CREATE INDEX "stellar_cosign_requests_evidence_package_id_created_at_idx" ON "stellar_cosign_requests"("evidence_package_id", "created_at");
 
 -- CreateIndex
-CREATE INDEX "stellar_cosign_requests_evidence_package_id_created_at_idx" ON "stellar_cosign_requests"("evidence_package_id", "created_at");
+CREATE INDEX "stellar_cosign_requests_tx_hash_idx" ON "stellar_cosign_requests"("tx_hash");
 
