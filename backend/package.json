@@ -18,7 +18,8 @@
     "test": "jest --runInBand",
     "postinstall": "prisma generate",
     "test:unit": "jest --runInBand src",
-    "test:e2e": "jest --runInBand test"
+    "test:e2e": "jest --runInBand test",
+    "attestation-account": "node scripts/create-attestation-account.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.6",
