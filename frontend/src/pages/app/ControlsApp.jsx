@@ -71,7 +71,7 @@ export default function ControlsApp() {
 }
 
 function ControlDetail({ detail, navigate }) {
-  const { control: c, test, requirement, source, latest_run, runs, exceptions, exceptions_count } = detail;
+  const { control: c, requirement, source, latest_run, runs, exceptions, exceptions_count } = detail;
   return (
     <Card testid="control-detail">
       <div className="border-b border-slate-800 px-6 py-5">

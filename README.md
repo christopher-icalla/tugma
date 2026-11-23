@@ -136,7 +136,7 @@ A worked example ships with the demo data. Transaction **TX-847291** was process
 ```mermaid
 flowchart LR
   subgraph Browser
-    UI[React app<br/>CRA + Tailwind + shadcn/ui]
+    UI[React app<br/>Vite + Tailwind + shadcn/ui]
     FW[Freighter wallet<br/>holds the user's key]
   end
   subgraph Server
@@ -244,7 +244,7 @@ The same checks run in the browser, hosted at [christopher-icalla.github.io/tugm
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 19, Create React App + CRACO, Tailwind CSS, shadcn/ui (Radix), lucide-react, sonner |
+| Frontend | React 19, Vite, Tailwind CSS, shadcn/ui (Radix), lucide-react, sonner |
 | Wallet | [Freighter](https://www.freighter.app/) via `@stellar/freighter-api` |
 | Backend | NestJS 11, TypeScript 5, Express, Zod validation |
 | Database | PostgreSQL 16 (14+ works), Prisma ORM and migrations |
@@ -413,7 +413,7 @@ TEST_DATABASE_URL=postgresql://localhost:5432/tugma_test pnpm test
 cd contracts && cargo test
 
 # Web app
-cd frontend && CI=true pnpm build
+cd frontend && pnpm lint && pnpm build
 
 # Standalone verifier (no database or network needed)
 cd verifier && pnpm install --frozen-lockfile && pnpm test
@@ -421,7 +421,7 @@ cd verifier && pnpm install --frozen-lockfile && pnpm test
 
 The API e2e suite boots the full NestJS app against Postgres. It checks the engine numbers, the exception workflow, the 403 role gates, package hash reproducibility, and the complete **link → attest → countersign → verify → sync** flow. That flow runs against an in-memory stand-in for the contract that enforces the contract's own rules, so CI doesn't depend on testnet. The same flow has been run end to end against real Stellar testnet.
 
-[GitHub Actions](.github/workflows/ci.yml) runs these jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **verifier** (`pnpm test`, including the offline valid-vs-tampered demo), **frontend** (production build with lint warnings as errors), **contracts** (`cargo test` plus a wasm build uploaded as an artifact), the API Docker image build, and the no-AI policy check.
+[GitHub Actions](.github/workflows/ci.yml) runs these jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **verifier** (`pnpm test`, including the offline valid-vs-tampered demo), **frontend** (ESLint with warnings as errors, then the production build), **contracts** (`cargo test` plus a wasm build uploaded as an artifact), the API Docker image build, and the no-AI policy check.
 
 ---
 

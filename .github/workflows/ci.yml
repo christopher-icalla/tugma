@@ -94,10 +94,11 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - name: Build (lint warnings fail the build)
+      - name: Lint (warnings fail the job)
+        run: pnpm lint
+      - name: Build
         run: pnpm build
         env:
-          CI: "true"
           REACT_APP_BACKEND_URL: https://api.example.invalid
 
   contracts:

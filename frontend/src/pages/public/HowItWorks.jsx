@@ -2,7 +2,6 @@ import React from "react";
 import { PublicNav, PublicFooter } from "@/components/public/PublicChrome";
 import { Section, Eyebrow } from "@/components/public/Primitives";
 import { FlowDiagram } from "@/components/public/FlowDiagram";
-import { ArrowDown } from "lucide-react";
 
 const STEPS = [
   ["01", "MAP", "Regulation → Requirement", "Authoritative regulatory publications are mapped into discrete, trackable requirements with source, version and effective date."],

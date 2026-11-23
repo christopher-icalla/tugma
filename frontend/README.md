@@ -1,6 +1,6 @@
 # TUGMA web app
 
-React 19 (Create React App + CRACO), Tailwind CSS and shadcn/ui. It includes the public
+React 19 (Vite), Tailwind CSS and shadcn/ui. It includes the public
 marketing site, the authenticated control center, and Freighter wallet signing for
 Stellar attestations.
 
@@ -9,7 +9,9 @@ corepack enable
 pnpm install
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
 pnpm start          # http://localhost:3000
+pnpm lint           # ESLint, warnings fail
 pnpm build          # production build in build/
+pnpm preview        # serve the production build on http://localhost:3000
 ```
 
 | Path | What it is |

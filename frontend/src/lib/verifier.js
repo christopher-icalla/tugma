@@ -3,7 +3,7 @@
  * Defaults to the copy of verifier/web published on GitHub Pages; set
  * REACT_APP_VERIFIER_URL to use another host.
  */
-export const VERIFIER_URL = process.env.REACT_APP_VERIFIER_URL || "https://christopher-icalla.github.io/tugma/verifier/web/";
+export const VERIFIER_URL = import.meta.env.REACT_APP_VERIFIER_URL || "https://christopher-icalla.github.io/tugma/verifier/web/";
 export const VERIFIER_GUIDE_URL = "https://github.com/christopher-icalla/tugma/blob/main/docs/verify-a-package.md";
 
 /** Where to send someone who wants to check a package file themselves. */
