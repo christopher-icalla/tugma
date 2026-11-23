@@ -207,7 +207,7 @@ Segregation of duties is enforced **twice**. The API rejects a countersignature 
 Anyone holding a package file can check it against Stellar without TUGMA. Download it from **Reports → Download canonical package**, then:
 
 ```sh
-cd verifier && npm ci
+cd verifier && corepack enable && pnpm install --frozen-lockfile
 node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json
 ```
 
@@ -234,7 +234,7 @@ VALID: this package is the one attested on Stellar.
 | `MISMATCH` | The attestation is for a different package, organization or period |
 | `BAD_SIGNATURE` | A signed export whose SEP-53 signature does not check out |
 
-The same checks run in the browser, hosted at [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) or locally with `npm run web`, and `npm run demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
+The same checks run in the browser, hosted at [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) or locally with `pnpm web`, and `pnpm demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
 
 > A `VALID` result establishes **package integrity**, not that the contents are true or that the organization is compliant.
 
@@ -292,7 +292,7 @@ The same checks run in the browser, hosted at [christopher-icalla.github.io/tugm
 
 - Node.js **22.12+**
 - PostgreSQL **14+** (or Docker)
-- Yarn 1 through Corepack (`corepack enable`) for the frontend
+- pnpm through Corepack (`corepack enable`); each package pins its pnpm version in `packageManager`
 - Rust + `wasm32v1-none` target and the [Stellar CLI](https://developers.stellar.org/docs/tools/cli), only if you're building or deploying the contract
 - [Freighter](https://www.freighter.app/), only if you're signing attestations
 
@@ -313,9 +313,10 @@ POSTGRES_PASSWORD=$(openssl rand -hex 16) docker compose up --build   # Postgres
 
 ```sh
 cd backend
-npm install
-npx prisma migrate deploy         # create tables
-npm run start:dev                 # http://localhost:8001 (watch mode)
+corepack enable
+pnpm install
+pnpm exec prisma migrate deploy   # create tables
+pnpm start:dev                    # http://localhost:8001 (watch mode)
 ```
 
 On first boot the API seeds the organization, the regulatory sources, the controls and the users, generates the 10,000-transaction dataset, and runs the control engine. Every step is idempotent, so restarting is safe.
@@ -325,9 +326,9 @@ On first boot the API seeds the organization, the regulatory sources, the contro
 ```sh
 cd frontend
 corepack enable
-yarn install
+pnpm install
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
-yarn start                        # http://localhost:3000
+pnpm start                        # http://localhost:3000
 ```
 
 ### Configuration, roles and API
@@ -406,21 +407,21 @@ The dataset is **synthetic and reproducible**. It has 10,000 transactions across
 ```sh
 # API: needs a Postgres database whose name contains "test" (it is cleared before the run)
 cd backend
-TEST_DATABASE_URL=postgresql://localhost:5432/tugma_test npm test
+TEST_DATABASE_URL=postgresql://localhost:5432/tugma_test pnpm test
 
 # Contract
 cd contracts && cargo test
 
 # Web app
-cd frontend && CI=true yarn build
+cd frontend && CI=true pnpm build
 
 # Standalone verifier (no database or network needed)
-cd verifier && npm ci && npm test
+cd verifier && pnpm install --frozen-lockfile && pnpm test
 ```
 
 The API e2e suite boots the full NestJS app against Postgres. It checks the engine numbers, the exception workflow, the 403 role gates, package hash reproducibility, and the complete **link → attest → countersign → verify → sync** flow. That flow runs against an in-memory stand-in for the contract that enforces the contract's own rules, so CI doesn't depend on testnet. The same flow has been run end to end against real Stellar testnet.
 
-[GitHub Actions](.github/workflows/ci.yml) runs these jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **verifier** (`npm test`, including the offline valid-vs-tampered demo), **frontend** (production build with lint warnings as errors), **contracts** (`cargo test` plus a wasm build uploaded as an artifact), the API Docker image build, and the no-AI policy check.
+[GitHub Actions](.github/workflows/ci.yml) runs these jobs on every push and pull request: **backend** (typecheck, tests against a Postgres service, build), **verifier** (`pnpm test`, including the offline valid-vs-tampered demo), **frontend** (production build with lint warnings as errors), **contracts** (`cargo test` plus a wasm build uploaded as an artifact), the API Docker image build, and the no-AI policy check.
 
 ---
 

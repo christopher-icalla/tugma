@@ -6,7 +6,7 @@
  * every time. docs/verify-a-package.md shows the same steps against the live
  * Testnet contract with a package exported from TUGMA.
  *
- *   npm run demo
+ *   pnpm demo
  */
 import { formatResult } from "../src/cli.js";
 import { canonicalJson } from "../src/canonical.js";

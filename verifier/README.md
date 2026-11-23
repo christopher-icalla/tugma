@@ -5,14 +5,14 @@ Standalone, open-source (MIT) verifier for TUGMA evidence packages. Give it a pa
 A `VALID` result establishes package integrity, not that the contents are true or that the organization is compliant.
 
 ```bash
-npm ci
+corepack enable && pnpm install --frozen-lockfile
 node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json   # command line
 node bin/tugma-verify.js batch ./packages/                      # many packages at once
 node bin/tugma-verify.js diff v1.json v2.json                   # what changed between two packages
 node bin/tugma-verify.js signers pkg.json                       # who attested and countersigned each version (and both signers of a two-party attestation)
-npm run web                                                      # browser: http://localhost:8787/web/
-npm run demo                                                     # valid vs. modified package, offline
-npm test
+pnpm web                                                         # browser: http://localhost:8787/web/
+pnpm demo                                                        # valid vs. modified package, offline
+pnpm test
 ```
 
 | Path | |

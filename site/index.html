@@ -68,7 +68,7 @@
           <li><b>TAMPERED</b> the contents changed after export</li>
           <li><b>NOT ATTESTED</b> no attestation matches the recomputed hash</li>
         </ul>
-        <pre><code>cd verifier &amp;&amp; npm ci
+        <pre><code>cd verifier &amp;&amp; corepack enable &amp;&amp; pnpm install --frozen-lockfile
 node bin/tugma-verify.js tugma-pkg-2026-01-01-2026-03-31.json</code></pre>
         <div class="cta">
           <a class="btn primary" href="./verifier/web/">Open the browser verifier</a>

@@ -10,7 +10,9 @@ module.exports = {
     '^.+\\.js$': ['ts-jest', { tsconfig: { allowJs: true } }],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(@exodus/bytes|@noble/ed25519|@noble/hashes|axios|proxy-from-env|eventsource|eventsource-parser|is-retry-allowed|smol-toml|uint8array-extras)/)',
+    // pnpm nests packages as node_modules/.pnpm/<name>@<ver>/node_modules/<name>, with
+    // "/" in scoped names written as "+", so allow both layouts.
+    '/node_modules/(?!(\.pnpm/)?(@exodus[/+]bytes|@noble[/+]ed25519|@noble[/+]hashes|axios|proxy-from-env|eventsource|eventsource-parser|is-retry-allowed|smol-toml|uint8array-extras)[@/])',
   ],
   setupFiles: ['<rootDir>/test/setup-env.ts'],
   globalSetup: '<rootDir>/test/global-setup.ts',

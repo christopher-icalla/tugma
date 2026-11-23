@@ -6,10 +6,10 @@ Stellar attestations.
 
 ```sh
 corepack enable
-yarn install
+pnpm install
 echo "REACT_APP_BACKEND_URL=http://localhost:8001" > .env
-yarn start          # http://localhost:3000
-yarn build          # production build in build/
+pnpm start          # http://localhost:3000
+pnpm build          # production build in build/
 ```
 
 | Path | What it is |

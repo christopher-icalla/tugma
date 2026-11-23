@@ -1,4 +1,4 @@
-# Local stack: PostgreSQL + TUGMA API. Run the frontend with `yarn start` in frontend/.
+# Local stack: PostgreSQL + TUGMA API. Run the frontend with `pnpm start` in frontend/.
 #   cp backend/.env.example backend/.env   # then edit secrets
 #   POSTGRES_PASSWORD=$(openssl rand -hex 16) docker compose up --build
 services:

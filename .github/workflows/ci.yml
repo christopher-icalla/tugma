@@ -45,15 +45,18 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tugma_test?schema=public
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: backend/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm test
+      - run: pnpm run build
 
   verifier:
     name: Standalone verifier (Node)
@@ -63,13 +66,16 @@ jobs:
         working-directory: verifier
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: verifier/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: verifier/package-lock.json
-      - run: npm ci
-      - run: npm test
+          cache: pnpm
+          cache-dependency-path: verifier/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
   frontend:
     name: Frontend (React build)
@@ -79,13 +85,17 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: corepack enable
-      - run: yarn install --frozen-lockfile --network-timeout 600000
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - name: Build (lint warnings fail the build)
-        run: yarn build
+        run: pnpm build
         env:
           CI: "true"
           REACT_APP_BACKEND_URL: https://api.example.invalid

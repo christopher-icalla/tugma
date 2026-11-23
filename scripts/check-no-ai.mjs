@@ -47,7 +47,7 @@ const SELF = "scripts/check-no-ai.mjs";
 const problems = [];
 const isAiPackage = (name) => PACKAGES.includes(name) || PACKAGE_PREFIXES.some((p) => name.startsWith(p));
 
-// --- npm: package.json (direct) and package-lock.json (transitive)
+// --- JS: package.json (direct) and pnpm-lock.yaml (transitive)
 for (const dir of ["backend", "frontend", "verifier"]) {
   const pkgPath = join(ROOT, dir, "package.json");
   if (existsSync(pkgPath)) {
@@ -58,24 +58,20 @@ for (const dir of ["backend", "frontend", "verifier"]) {
       }
     }
   }
-  const lockPath = join(ROOT, dir, "package-lock.json");
-  if (existsSync(lockPath)) {
-    const lock = JSON.parse(readFileSync(lockPath, "utf8"));
-    for (const key of Object.keys(lock.packages ?? {})) {
-      const name = key.split("node_modules/").pop();
-      if (name && isAiPackage(name)) problems.push(`${dir}/package-lock.json: ${name} (transitive)`);
-    }
+  const lockPath = join(ROOT, dir, "pnpm-lock.yaml");
+  if (!existsSync(lockPath)) {
+    // Without a lockfile the transitive check below would pass vacuously.
+    problems.push(`${dir}/pnpm-lock.yaml is missing, so transitive dependencies can't be checked`);
+    continue;
   }
-  const yarnPath = join(ROOT, dir, "yarn.lock");
-  if (existsSync(yarnPath)) {
-    for (const line of readFileSync(yarnPath, "utf8").split("\n")) {
-      if (/^\s/.test(line) || !line.includes("@")) continue; // only package header lines
-      for (const spec of line.replace(/:$/, "").split(",")) {
-        const s = spec.trim().replace(/^"|"$/g, "");
-        const name = s.startsWith("@") ? `@${s.slice(1).split("@")[0]}` : s.split("@")[0];
-        if (isAiPackage(name)) problems.push(`${dir}/yarn.lock: ${name} (transitive)`);
-      }
-    }
+  let section = null;
+  for (const line of readFileSync(lockPath, "utf8").split(/\r?\n/)) {
+    const top = line.match(/^(\w+):/);
+    if (top) section = top[1];
+    if (section !== "packages" && section !== "snapshots") continue;
+    // Entry keys sit at two spaces: `  name@1.2.3:` or `  '@scope/name@1.2.3(peer@4.5.6)':`
+    const m = line.match(/^ {2}'?(@?[^@'\s]+)@/);
+    if (m && isAiPackage(m[1])) problems.push(`${dir}/pnpm-lock.yaml: ${m[1]} (transitive)`);
   }
 }
 
@@ -110,7 +106,7 @@ for (const dir of SOURCE_DIRS) {
 
 if (problems.length) {
   console.error("No-AI policy violated. TUGMA's compliance and evidence workflow must stay deterministic:\n");
-  for (const p of problems) console.error(`  - ${p}`);
+  for (const p of new Set(problems)) console.error(`  - ${p}`);
   console.error("\nRemove the AI dependency or call. See README → Deterministic by design.");
   process.exit(1);
 }

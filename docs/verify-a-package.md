@@ -30,7 +30,8 @@ Requires Node.js 22.12 or later.
 
 ```bash
 cd verifier
-npm ci
+corepack enable
+pnpm install --frozen-lockfile
 node bin/tugma-verify.js ~/Downloads/tugma-pkg-2026-01-01-2026-03-31.json
 ```
 
@@ -87,7 +88,7 @@ node bin/tugma-verify.js signers tugma-pkg-2026-01-01-2026-03-31.json
 
 ```bash
 cd verifier
-npm run web        # serves http://localhost:8787/web/
+pnpm web           # serves http://localhost:8787/web/
 ```
 
 Open the page and drop the file on it, or drop several files to check them together and get one row per file. The file is read and hashed inside the browser and is never uploaded anywhere. The page talks only to the Soroban RPC endpoint shown under **Network settings** and to the CDN that serves the pinned Stellar SDK (checked with a Subresource Integrity hash). `verifier/web/` is plain static files, so it can also be hosted on any static host.
@@ -141,7 +142,7 @@ The verifier recomputes the record's hash, checks that its `id:content_hash` lin
 **Offline, reproducible** (also runs in CI):
 
 ```bash
-cd verifier && npm run demo
+cd verifier && pnpm demo
 ```
 
 It runs the real verifier on three files against an in-memory stand-in for the contract that holds one attestation: the package as exported (`VALID`), the same package with its exception removed (`TAMPERED`), and the edited package with its hash also edited to match (`NOT_ATTESTED`).
