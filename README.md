@@ -234,7 +234,7 @@ VALID: this package is the one attested on Stellar.
 | `MISMATCH` | The attestation is for a different package, organization or period |
 | `BAD_SIGNATURE` | A signed export whose SEP-53 signature does not check out |
 
-The same checks run in the browser, hosted at [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) or locally with `pnpm web`, and `pnpm demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md).
+The same checks run in the browser, hosted at [christopher-icalla.github.io/tugma/verifier/web](https://christopher-icalla.github.io/tugma/verifier/web/) or locally with `pnpm web`, and `pnpm demo` shows a valid package passing and a modified one failing. One evidence record can be checked on its own with `tugma-verify evidence <record.json> --package <package.json>`. Full guide: [docs/verify-a-package.md](docs/verify-a-package.md). Technical documents: [specification](docs/specification.md), [contract interface and trust model](docs/contract-interface.md), [architecture](docs/architecture.md), [validation report](docs/validation/report.md).
 
 > A `VALID` result establishes **package integrity**, not that the contents are true or that the organization is compliant.
 
