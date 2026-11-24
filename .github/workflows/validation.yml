@@ -1,0 +1,57 @@
+name: Acceptance validation
+
+# Runs the workflow, tamper tests and API-unavailable run against Stellar Testnet. Manual only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tugma_validation
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      VALIDATION_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tugma_validation?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tugma_validation?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: backend/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile && pnpm run build && pnpm exec prisma migrate deploy
+        working-directory: backend
+      - run: pnpm install --frozen-lockfile
+        working-directory: verifier
+      - name: Validate
+        working-directory: verifier
+        run: node validation/run-validation.mjs
+      - name: Record the browser verifier
+        if: always()
+        working-directory: verifier
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && npm --prefix "$RUNNER_TEMP/pw" install playwright@1.56.1
+          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
+          ln -s "$RUNNER_TEMP/pw/node_modules/playwright" node_modules/playwright
+          node bin/serve-web.js &
+          sleep 3
+          node validation/record.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation
+          path: docs/validation
