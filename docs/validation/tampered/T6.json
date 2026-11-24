@@ -1,0 +1,85 @@
+{
+  "format": "tugma.evidence-package",
+  "format_version": 1,
+  "package_id": "pkg-2025-01-01-2025-01-01",
+  "period_start": "2026-01-01",
+  "period_end": "2026-01-01",
+  "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+  "canonical_hash": "b86e78f5559f3be22a1f1baa956137abbf5655fcfc7581f46afe4a0b07579769",
+  "hash_algorithm": "sha256",
+  "canonicalization": "json-sorted-keys-compact-utf8",
+  "network": {
+    "name": "TESTNET",
+    "passphrase": "Test SDF Network ; September 2015",
+    "contract_id": "CCP6DCRYYXCCWHAHKMZMRRADVOEZYW5BSGVFUTLDUU5TFP26LL2NN6L5"
+  },
+  "manifest": {
+    "counts": {
+      "controls": 5,
+      "evidence": 1,
+      "exceptions": 7,
+      "completeness": 14,
+      "transactions": 7
+    },
+    "period": [
+      "2026-01-01",
+      "2026-01-01"
+    ],
+    "controls": [
+      "CTRL-001",
+      "CTRL-002",
+      "CTRL-003",
+      "CTRL-004",
+      "CTRL-005"
+    ],
+    "evidence": [
+      "evd-4f069de5f4:13cab3e4e5bbb4c88d2f0d721b9c12177550bd507d72240144b922e526925065"
+    ],
+    "test_runs": [
+      "run-171ee55cf844",
+      "run-418bdb03d26e",
+      "run-764cb10f7eef",
+      "run-7abff4f494c1",
+      "run-8c17f8a15c81"
+    ],
+    "exceptions": [
+      "EXC-CTRL-005-TX-126196",
+      "EXC-CTRL-005-TX-376301",
+      "EXC-CTRL-005-TX-380778",
+      "EXC-CTRL-005-TX-387515",
+      "EXC-CTRL-005-TX-619782",
+      "EXC-CTRL-005-TX-717523",
+      "EXC-CTRL-005-TX-847291"
+    ],
+    "remediations": [
+      "rem-0d7b8b57baf0",
+      "rem-3f7a75c54562",
+      "rem-4e2e42872cc6",
+      "rem-5a96eaca5491",
+      "rem-8596c4a79043",
+      "rem-8726b728881d",
+      "rem-b00fe69067a2"
+    ],
+    "requirements": [
+      "req-amlc-ctpf",
+      "req-bsp-eup",
+      "req-bsp-itrm",
+      "req-bsp-settle",
+      "req-bsp-tpo"
+    ],
+    "transactions": [
+      "TX-126196",
+      "TX-376301",
+      "TX-380778",
+      "TX-387515",
+      "TX-619782",
+      "TX-717523",
+      "TX-847291"
+    ],
+    "regulatory_sources": [
+      "src-amlc",
+      "src-bsp-morps"
+    ]
+  },
+  "canonical_manifest": "{\"controls\":[\"CTRL-001\",\"CTRL-002\",\"CTRL-003\",\"CTRL-004\",\"CTRL-005\"],\"counts\":{\"completeness\":14,\"controls\":5,\"evidence\":1,\"exceptions\":7,\"transactions\":7},\"evidence\":[\"evd-4f069de5f4:13cab3e4e5bbb4c88d2f0d721b9c12177550bd507d72240144b922e526925065\"],\"exceptions\":[\"EXC-CTRL-005-TX-126196\",\"EXC-CTRL-005-TX-376301\",\"EXC-CTRL-005-TX-380778\",\"EXC-CTRL-005-TX-387515\",\"EXC-CTRL-005-TX-619782\",\"EXC-CTRL-005-TX-717523\",\"EXC-CTRL-005-TX-847291\"],\"period\":[\"2026-01-01\",\"2026-01-01\"],\"regulatory_sources\":[\"src-amlc\",\"src-bsp-morps\"],\"remediations\":[\"rem-0d7b8b57baf0\",\"rem-3f7a75c54562\",\"rem-4e2e42872cc6\",\"rem-5a96eaca5491\",\"rem-8596c4a79043\",\"rem-8726b728881d\",\"rem-b00fe69067a2\"],\"requirements\":[\"req-amlc-ctpf\",\"req-bsp-eup\",\"req-bsp-itrm\",\"req-bsp-settle\",\"req-bsp-tpo\"],\"test_runs\":[\"run-171ee55cf844\",\"run-418bdb03d26e\",\"run-764cb10f7eef\",\"run-7abff4f494c1\",\"run-8c17f8a15c81\"],\"transactions\":[\"TX-126196\",\"TX-376301\",\"TX-380778\",\"TX-387515\",\"TX-619782\",\"TX-717523\",\"TX-847291\"]}"
+}

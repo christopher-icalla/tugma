@@ -1,0 +1,1413 @@
+{
+  "started_at": "2026-11-24T11:48:54.326Z",
+  "wasm_hash": "90e859d243cb53174b1dfe94ec8d0d36ebc1db16f3d2eacd9b3939f60143d948",
+  "runs": [
+    {
+      "id": "E1",
+      "exception": "EXC-CTRL-005-TX-847291",
+      "transaction": "TX-847291",
+      "period": "2026-01-01",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "b86e78f5559f3be22a1f1baa956137abbf5655fcfc7581f46afe4a0b07579769"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "cee411191b7230f43d2898d1c33cda3468212cd34a5ab97934050e7d2b52adff"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-01-2026-01-01",
+      "canonical_hash": "b86e78f5559f3be22a1f1baa956137abbf5655fcfc7581f46afe4a0b07579769",
+      "attest_tx": "cee411191b7230f43d2898d1c33cda3468212cd34a5ab97934050e7d2b52adff",
+      "countersign_tx": "86e30cc3beaa626636788f3b9e8ac6d128d081530a9a1923ac2db96cc56553af",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-01-2026-01-01",
+        "version": 1,
+        "hash": "b86e78f5559f3be22a1f1baa956137abbf5655fcfc7581f46afe4a0b07579769",
+        "period_start": "2026-01-01",
+        "period_end": "2026-01-01",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:49:47.000Z",
+        "attested_ledger": 5899469,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:49:52.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E2",
+      "exception": "EXC-CTRL-005-TX-118286",
+      "transaction": "TX-118286",
+      "period": "2026-01-12",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "d26ad4bee4d1a2d31d7343e488a58addc784b9ec6d2734d16bc9b15a3367381c"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "7d5599e4573ddf3778c3c79e1be31d81cc96f44c75961aa3785f96926b3ba629"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-12-2026-01-12",
+      "canonical_hash": "d26ad4bee4d1a2d31d7343e488a58addc784b9ec6d2734d16bc9b15a3367381c",
+      "attest_tx": "7d5599e4573ddf3778c3c79e1be31d81cc96f44c75961aa3785f96926b3ba629",
+      "countersign_tx": "0d7089cbfaa9e6c3232f9d9355806169e0f59dbb9b72b5d694809332897f99f3",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-12-2026-01-12",
+        "version": 1,
+        "hash": "d26ad4bee4d1a2d31d7343e488a58addc784b9ec6d2734d16bc9b15a3367381c",
+        "period_start": "2026-01-12",
+        "period_end": "2026-01-12",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:49:57.000Z",
+        "attested_ledger": 5899471,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:02.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E3",
+      "exception": "EXC-CTRL-005-TX-118544",
+      "transaction": "TX-118544",
+      "period": "2026-01-11",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "02eaca9a2a471c297f4cd1beb6a1211f697403dcc878619457c96c079a1be559"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "72894596a2c4b4b40a5a46c2a19610b016d7c2d03b10931893a29612ae3f65a4"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-11-2026-01-11",
+      "canonical_hash": "02eaca9a2a471c297f4cd1beb6a1211f697403dcc878619457c96c079a1be559",
+      "attest_tx": "72894596a2c4b4b40a5a46c2a19610b016d7c2d03b10931893a29612ae3f65a4",
+      "countersign_tx": "be1e4d30676cc5aa606de525769dc6213a9c6b68192a7b788fae141a24f71a01",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-11-2026-01-11",
+        "version": 1,
+        "hash": "02eaca9a2a471c297f4cd1beb6a1211f697403dcc878619457c96c079a1be559",
+        "period_start": "2026-01-11",
+        "period_end": "2026-01-11",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:07.000Z",
+        "attested_ledger": 5899473,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:12.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E4",
+      "exception": "EXC-CTRL-005-TX-138445",
+      "transaction": "TX-138445",
+      "period": "2026-01-17",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "5e0db226acfc42b2b7113c3882177a1ff60fbbaf382ac09b186844731ead73dc"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "853556fc6bf1d47433cbc7ce52b8209826256cc0bd721fa4b8b27e1321245a3d"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-17-2026-01-17",
+      "canonical_hash": "5e0db226acfc42b2b7113c3882177a1ff60fbbaf382ac09b186844731ead73dc",
+      "attest_tx": "853556fc6bf1d47433cbc7ce52b8209826256cc0bd721fa4b8b27e1321245a3d",
+      "countersign_tx": "9d1c811fabd464aae6e75e653afa97cc8035b63825819058bcb620bf61b51338",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-17-2026-01-17",
+        "version": 1,
+        "hash": "5e0db226acfc42b2b7113c3882177a1ff60fbbaf382ac09b186844731ead73dc",
+        "period_start": "2026-01-17",
+        "period_end": "2026-01-17",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:17.000Z",
+        "attested_ledger": 5899475,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:22.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E5",
+      "exception": "EXC-CTRL-005-TX-176752",
+      "transaction": "TX-176752",
+      "period": "2026-01-06",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "ab815dae12f001cffecc74f6ee361a0cc3f5b27068a62009afe3d72b813962d9"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "181e94691af1319cee968d86e6ae97f74d85c9374823e4c268d2698344589755"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-06-2026-01-06",
+      "canonical_hash": "ab815dae12f001cffecc74f6ee361a0cc3f5b27068a62009afe3d72b813962d9",
+      "attest_tx": "181e94691af1319cee968d86e6ae97f74d85c9374823e4c268d2698344589755",
+      "countersign_tx": "163bd69314c01b014b031ffc2cdbfa0719963ffb2533ddfc80231265e99a89e7",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-06-2026-01-06",
+        "version": 1,
+        "hash": "ab815dae12f001cffecc74f6ee361a0cc3f5b27068a62009afe3d72b813962d9",
+        "period_start": "2026-01-06",
+        "period_end": "2026-01-06",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:27.000Z",
+        "attested_ledger": 5899477,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:32.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E6",
+      "exception": "EXC-CTRL-005-TX-180407",
+      "transaction": "TX-180407",
+      "period": "2026-01-08",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "b8b59535068edf8531231facdd5c2ef7549a07d7d27278df896664eae5fb3bac"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "08bf475773c2615d7be89dddf0998d263996d28c5aebb32341c1728732eac177"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-08-2026-01-08",
+      "canonical_hash": "b8b59535068edf8531231facdd5c2ef7549a07d7d27278df896664eae5fb3bac",
+      "attest_tx": "08bf475773c2615d7be89dddf0998d263996d28c5aebb32341c1728732eac177",
+      "countersign_tx": "926333be90aedd84cd9e1261a39bdc30feb831998c93c2e742d7918e0b89e2ae",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-08-2026-01-08",
+        "version": 1,
+        "hash": "b8b59535068edf8531231facdd5c2ef7549a07d7d27278df896664eae5fb3bac",
+        "period_start": "2026-01-08",
+        "period_end": "2026-01-08",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:37.000Z",
+        "attested_ledger": 5899479,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:42.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E7",
+      "exception": "EXC-CTRL-005-TX-187322",
+      "transaction": "TX-187322",
+      "period": "2026-01-03",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "38f00c1a0e5a5f0aa99d4158066ef0ef124fea6ff07cf5a6ed0444ca2046753a"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "c4a396358c803229a76ea869c84ea0dfe07fa2e1a92886a3cef492c5f1a76f98"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-03-2026-01-03",
+      "canonical_hash": "38f00c1a0e5a5f0aa99d4158066ef0ef124fea6ff07cf5a6ed0444ca2046753a",
+      "attest_tx": "c4a396358c803229a76ea869c84ea0dfe07fa2e1a92886a3cef492c5f1a76f98",
+      "countersign_tx": "ca8c8c73c8ed6075deb82b8d272e3b34586f9db6bd454f06fba6cfcf60156d80",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-03-2026-01-03",
+        "version": 1,
+        "hash": "38f00c1a0e5a5f0aa99d4158066ef0ef124fea6ff07cf5a6ed0444ca2046753a",
+        "period_start": "2026-01-03",
+        "period_end": "2026-01-03",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:47.000Z",
+        "attested_ledger": 5899481,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:50:52.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E8",
+      "exception": "EXC-CTRL-005-TX-251441",
+      "transaction": "TX-251441",
+      "period": "2026-01-21",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "f9f6bff5f65c03a1f2099f49e735fe43ad36dde5eeaa33018153cd0c0b4ce07c"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "1043275608eb850b3638f346f2a4951cbd3f5367f82121c2e51a1c48409f4eaa"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-21-2026-01-21",
+      "canonical_hash": "f9f6bff5f65c03a1f2099f49e735fe43ad36dde5eeaa33018153cd0c0b4ce07c",
+      "attest_tx": "1043275608eb850b3638f346f2a4951cbd3f5367f82121c2e51a1c48409f4eaa",
+      "countersign_tx": "c791acdd5448e68174e720867d9ac6af9119a6cf95c9c7347e846d8086d80586",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-21-2026-01-21",
+        "version": 1,
+        "hash": "f9f6bff5f65c03a1f2099f49e735fe43ad36dde5eeaa33018153cd0c0b4ce07c",
+        "period_start": "2026-01-21",
+        "period_end": "2026-01-21",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:50:57.000Z",
+        "attested_ledger": 5899483,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:51:02.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E9",
+      "exception": "EXC-CTRL-005-TX-256109",
+      "transaction": "TX-256109",
+      "period": "2026-01-20",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "b222ebb62079c44c42f8c3c74221be7f987520946642c7eb4da36bfe5f92b913"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "6b52012ef37b42b166f1ff60b44b130457b731e5a1bb1d2546b972574410fbde"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-20-2026-01-20",
+      "canonical_hash": "b222ebb62079c44c42f8c3c74221be7f987520946642c7eb4da36bfe5f92b913",
+      "attest_tx": "6b52012ef37b42b166f1ff60b44b130457b731e5a1bb1d2546b972574410fbde",
+      "countersign_tx": "504b0dcb966811ab46d6e8206c37da80c2273402fca4ec94998667941f63cdaf",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-20-2026-01-20",
+        "version": 1,
+        "hash": "b222ebb62079c44c42f8c3c74221be7f987520946642c7eb4da36bfe5f92b913",
+        "period_start": "2026-01-20",
+        "period_end": "2026-01-20",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:51:07.000Z",
+        "attested_ledger": 5899485,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:51:12.000Z"
+      },
+      "pass": true
+    },
+    {
+      "id": "E10",
+      "exception": "EXC-CTRL-005-TX-317681",
+      "transaction": "TX-317681",
+      "period": "2026-01-05",
+      "steps": [
+        {
+          "name": "Control run finds the failed test",
+          "pass": true,
+          "detail": "132 exceptions detected by the run"
+        },
+        {
+          "name": "Resolve without evidence is refused",
+          "pass": true
+        },
+        {
+          "name": "Remediated, then verified by a different role",
+          "pass": true
+        },
+        {
+          "name": "Same SHA-256 from 3 reconstructions",
+          "pass": true,
+          "detail": "a2ca484aaec851f4a46b522eed78d895c6c3e69ecc652c7f84e62f124d057938"
+        },
+        {
+          "name": "Attested on Testnet with transaction reference",
+          "pass": true,
+          "detail": "bfa91ce9cb7bd464d3db76b6eb05fe90eb68c6c82eae0fcf51b2484f07fff71a"
+        },
+        {
+          "name": "Self-countersignature rejected by the contract",
+          "pass": true,
+          "detail": "Error(Contract, #5)"
+        },
+        {
+          "name": "The attesting user cannot countersign through the API",
+          "pass": true,
+          "detail": "HTTP 403"
+        },
+        {
+          "name": "Countersigned by a different wallet",
+          "pass": true
+        },
+        {
+          "name": "Transaction reference kept after re-sync",
+          "pass": true
+        },
+        {
+          "name": "Repeated exports are byte-identical",
+          "pass": true
+        },
+        {
+          "name": "Standalone verifier",
+          "pass": true,
+          "detail": "VALID, exit 0"
+        }
+      ],
+      "package_id": "pkg-2026-01-05-2026-01-05",
+      "canonical_hash": "a2ca484aaec851f4a46b522eed78d895c6c3e69ecc652c7f84e62f124d057938",
+      "attest_tx": "bfa91ce9cb7bd464d3db76b6eb05fe90eb68c6c82eae0fcf51b2484f07fff71a",
+      "countersign_tx": "9da6395177af6915680e488fe9ccabe63ab2871718e9c0cf46cf34022a5b2251",
+      "attestation": {
+        "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+        "package_id": "pkg-2026-01-05-2026-01-05",
+        "version": 1,
+        "hash": "a2ca484aaec851f4a46b522eed78d895c6c3e69ecc652c7f84e62f124d057938",
+        "period_start": "2026-01-05",
+        "period_end": "2026-01-05",
+        "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+        "attested_at": "2026-11-24T11:51:17.000Z",
+        "attested_ledger": 5899487,
+        "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+        "verified_at": "2026-11-24T11:51:22.000Z"
+      },
+      "pass": true
+    }
+  ],
+  "tamper": [
+    {
+      "id": "T1",
+      "scenario": "exception removed from the manifest",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T1.json",
+      "warnings": []
+    },
+    {
+      "id": "T2",
+      "scenario": "exception removed, canonical form and hash rewritten to match",
+      "expected": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T2.json",
+      "warnings": [
+        "1 version(s) of pkg-2026-01-01-2026-01-01 are attested on-chain, and this file matches none of them."
+      ]
+    },
+    {
+      "id": "T3",
+      "scenario": "only canonical_manifest edited",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T3.json",
+      "warnings": []
+    },
+    {
+      "id": "T4",
+      "scenario": "only the declared hash edited",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T4.json",
+      "warnings": []
+    },
+    {
+      "id": "T5",
+      "scenario": "evidence content hash replaced",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T5.json",
+      "warnings": []
+    },
+    {
+      "id": "T6",
+      "scenario": "package id changed",
+      "expected": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "actual": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T6.json",
+      "warnings": []
+    },
+    {
+      "id": "T7",
+      "scenario": "organization id changed",
+      "expected": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "actual": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T7.json",
+      "warnings": []
+    },
+    {
+      "id": "T8",
+      "scenario": "period changed",
+      "expected": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "actual": {
+        "status": "MISMATCH",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T8.json",
+      "warnings": []
+    },
+    {
+      "id": "T9",
+      "scenario": "completeness count raised",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T9.json",
+      "warnings": []
+    },
+    {
+      "id": "T10",
+      "scenario": "truncated file",
+      "expected": {
+        "status": null,
+        "exit": 2
+      },
+      "actual": {
+        "status": null,
+        "exit": 2
+      },
+      "pass": true,
+      "file": "tampered/T10.json",
+      "warnings": []
+    },
+    {
+      "id": "T11",
+      "scenario": "forged package attested on a look-alike contract that the file names",
+      "expected": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "pass": true,
+      "file": "tampered/T11.json",
+      "warnings": [
+        "The file names contract CBFI7UUSFMMJADUPOXGFPTN6E77GF6FRTHHUY22KMA3LDSHK7I7JENL4, but this check used CCP6DCRYYXCCWHAHKMZMRRADVOEZYW5BSGVFUTLDUU5TFP26LL2NN6L5. The verifier never takes the contract from the file.",
+        "1 version(s) of pkg-2026-01-01-2026-01-01 are attested on-chain, and this file matches none of them."
+      ]
+    },
+    {
+      "id": "T11b",
+      "scenario": "the verifier warns that the file names another contract",
+      "expected": true,
+      "actual": true,
+      "pass": true
+    },
+    {
+      "id": "V1",
+      "scenario": "unmodified evidence record",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "T12",
+      "scenario": "evidence record content changed",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true
+    },
+    {
+      "id": "V2",
+      "scenario": "superseded version 1 still verifies and is reported as not the latest",
+      "expected": {
+        "status": "VALID",
+        "exit": 0,
+        "latest": 2
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0,
+        "latest": 2
+      },
+      "pass": true,
+      "warnings": [
+        "This is version 1; version 2 of this package has since been attested."
+      ]
+    }
+  ],
+  "contract_rejections": [
+    {
+      "id": "C1",
+      "scenario": "attest by an unauthorized wallet",
+      "expected": "Error(Contract, #1)",
+      "actual": "Error(Contract, #1)",
+      "pass": true
+    },
+    {
+      "id": "C2",
+      "scenario": "attest a hash that is already attested",
+      "expected": "Error(Contract, #2)",
+      "actual": "Error(Contract, #2)",
+      "pass": true
+    },
+    {
+      "id": "C3",
+      "scenario": "read a version that does not exist",
+      "expected": "Error(Contract, #3)",
+      "actual": "Error(Contract, #3)",
+      "pass": true
+    },
+    {
+      "id": "C4",
+      "scenario": "countersign an already countersigned version",
+      "expected": "Error(Contract, #4)",
+      "actual": "Error(Contract, #4)",
+      "pass": true
+    }
+  ],
+  "api_unavailable": [
+    {
+      "id": "U1",
+      "scenario": "API health check",
+      "expected": "ECONNREFUSED",
+      "actual": "ECONNREFUSED",
+      "pass": true
+    },
+    {
+      "id": "U2",
+      "scenario": "verify pkg-2026-01-01-2026-01-01",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U3",
+      "scenario": "verify pkg-2026-01-12-2026-01-12",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U4",
+      "scenario": "verify pkg-2026-01-11-2026-01-11",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U5",
+      "scenario": "verify pkg-2026-01-17-2026-01-17",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U6",
+      "scenario": "verify pkg-2026-01-06-2026-01-06",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U7",
+      "scenario": "verify pkg-2026-01-08-2026-01-08",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U8",
+      "scenario": "verify pkg-2026-01-03-2026-01-03",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U9",
+      "scenario": "verify pkg-2026-01-21-2026-01-21",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U10",
+      "scenario": "verify pkg-2026-01-20-2026-01-20",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U11",
+      "scenario": "verify pkg-2026-01-05-2026-01-05",
+      "expected": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "actual": {
+        "status": "VALID",
+        "exit": 0
+      },
+      "pass": true
+    },
+    {
+      "id": "U-tampered",
+      "scenario": "verify T1 (modified package)",
+      "expected": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "TAMPERED",
+        "exit": 1
+      },
+      "pass": true
+    },
+    {
+      "id": "U-forged",
+      "scenario": "verify T2 (modified and resealed)",
+      "expected": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "actual": {
+        "status": "NOT_ATTESTED",
+        "exit": 1
+      },
+      "pass": true
+    },
+    {
+      "id": "U-hosts",
+      "scenario": "the only hosts contacted are Stellar's",
+      "expected": true,
+      "actual": true,
+      "pass": true,
+      "hosts": [
+        "horizon-testnet.stellar.org",
+        "soroban-testnet.stellar.org"
+      ]
+    },
+    {
+      "id": "U-rpc",
+      "scenario": "Soroban RPC also unreachable: fails closed",
+      "expected": {
+        "status": null,
+        "exit": 3
+      },
+      "actual": {
+        "status": null,
+        "exit": 3
+      },
+      "pass": true
+    }
+  ],
+  "access": [
+    {
+      "id": "A-auditor",
+      "scenario": "auditor cannot prepare an attestation",
+      "expected": 403,
+      "actual": 403,
+      "pass": true
+    },
+    {
+      "id": "A-viewer",
+      "scenario": "viewer cannot prepare an attestation",
+      "expected": 403,
+      "actual": 403,
+      "pass": true
+    },
+    {
+      "id": "A-anon",
+      "scenario": "export without a session",
+      "expected": 401,
+      "actual": 401,
+      "pass": true
+    }
+  ],
+  "transactions": [
+    {
+      "hash": "12d19189771e6c2100a4dbaeb0c592a9f31e675360c15a765fa31412ab0d543c",
+      "purpose": "Deploy validation contract",
+      "ledger": 5899463,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/12d19189771e6c2100a4dbaeb0c592a9f31e675360c15a765fa31412ab0d543c"
+    },
+    {
+      "hash": "0aea61f91c7b70fcb00038105b68ae911f4225635023024aa258c686865fe9c0",
+      "purpose": "Deploy look-alike contract",
+      "ledger": 5899464,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/0aea61f91c7b70fcb00038105b68ae911f4225635023024aa258c686865fe9c0"
+    },
+    {
+      "hash": "436e3d39415e1647c48272bc9820c4d7da3d3b846a1e1f0fe00bdb6354831922",
+      "purpose": "Authorize signer",
+      "ledger": 5899467,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/436e3d39415e1647c48272bc9820c4d7da3d3b846a1e1f0fe00bdb6354831922"
+    },
+    {
+      "hash": "32191294f6a4eefb6d268c9df83c7e410a1a7ef4a76b5a9829dcfc47a3d0a7d2",
+      "purpose": "Authorize signer",
+      "ledger": 5899468,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/32191294f6a4eefb6d268c9df83c7e410a1a7ef4a76b5a9829dcfc47a3d0a7d2"
+    },
+    {
+      "hash": "cee411191b7230f43d2898d1c33cda3468212cd34a5ab97934050e7d2b52adff",
+      "purpose": "E1: attest pkg-2026-01-01-2026-01-01",
+      "ledger": 5899469,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/cee411191b7230f43d2898d1c33cda3468212cd34a5ab97934050e7d2b52adff"
+    },
+    {
+      "hash": "86e30cc3beaa626636788f3b9e8ac6d128d081530a9a1923ac2db96cc56553af",
+      "purpose": "E1: countersign pkg-2026-01-01-2026-01-01",
+      "ledger": 5899470,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/86e30cc3beaa626636788f3b9e8ac6d128d081530a9a1923ac2db96cc56553af"
+    },
+    {
+      "hash": "7d5599e4573ddf3778c3c79e1be31d81cc96f44c75961aa3785f96926b3ba629",
+      "purpose": "E2: attest pkg-2026-01-12-2026-01-12",
+      "ledger": 5899471,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/7d5599e4573ddf3778c3c79e1be31d81cc96f44c75961aa3785f96926b3ba629"
+    },
+    {
+      "hash": "0d7089cbfaa9e6c3232f9d9355806169e0f59dbb9b72b5d694809332897f99f3",
+      "purpose": "E2: countersign pkg-2026-01-12-2026-01-12",
+      "ledger": 5899472,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/0d7089cbfaa9e6c3232f9d9355806169e0f59dbb9b72b5d694809332897f99f3"
+    },
+    {
+      "hash": "72894596a2c4b4b40a5a46c2a19610b016d7c2d03b10931893a29612ae3f65a4",
+      "purpose": "E3: attest pkg-2026-01-11-2026-01-11",
+      "ledger": 5899473,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/72894596a2c4b4b40a5a46c2a19610b016d7c2d03b10931893a29612ae3f65a4"
+    },
+    {
+      "hash": "be1e4d30676cc5aa606de525769dc6213a9c6b68192a7b788fae141a24f71a01",
+      "purpose": "E3: countersign pkg-2026-01-11-2026-01-11",
+      "ledger": 5899474,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/be1e4d30676cc5aa606de525769dc6213a9c6b68192a7b788fae141a24f71a01"
+    },
+    {
+      "hash": "853556fc6bf1d47433cbc7ce52b8209826256cc0bd721fa4b8b27e1321245a3d",
+      "purpose": "E4: attest pkg-2026-01-17-2026-01-17",
+      "ledger": 5899475,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/853556fc6bf1d47433cbc7ce52b8209826256cc0bd721fa4b8b27e1321245a3d"
+    },
+    {
+      "hash": "9d1c811fabd464aae6e75e653afa97cc8035b63825819058bcb620bf61b51338",
+      "purpose": "E4: countersign pkg-2026-01-17-2026-01-17",
+      "ledger": 5899476,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/9d1c811fabd464aae6e75e653afa97cc8035b63825819058bcb620bf61b51338"
+    },
+    {
+      "hash": "181e94691af1319cee968d86e6ae97f74d85c9374823e4c268d2698344589755",
+      "purpose": "E5: attest pkg-2026-01-06-2026-01-06",
+      "ledger": 5899477,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/181e94691af1319cee968d86e6ae97f74d85c9374823e4c268d2698344589755"
+    },
+    {
+      "hash": "163bd69314c01b014b031ffc2cdbfa0719963ffb2533ddfc80231265e99a89e7",
+      "purpose": "E5: countersign pkg-2026-01-06-2026-01-06",
+      "ledger": 5899478,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/163bd69314c01b014b031ffc2cdbfa0719963ffb2533ddfc80231265e99a89e7"
+    },
+    {
+      "hash": "08bf475773c2615d7be89dddf0998d263996d28c5aebb32341c1728732eac177",
+      "purpose": "E6: attest pkg-2026-01-08-2026-01-08",
+      "ledger": 5899479,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/08bf475773c2615d7be89dddf0998d263996d28c5aebb32341c1728732eac177"
+    },
+    {
+      "hash": "926333be90aedd84cd9e1261a39bdc30feb831998c93c2e742d7918e0b89e2ae",
+      "purpose": "E6: countersign pkg-2026-01-08-2026-01-08",
+      "ledger": 5899480,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/926333be90aedd84cd9e1261a39bdc30feb831998c93c2e742d7918e0b89e2ae"
+    },
+    {
+      "hash": "c4a396358c803229a76ea869c84ea0dfe07fa2e1a92886a3cef492c5f1a76f98",
+      "purpose": "E7: attest pkg-2026-01-03-2026-01-03",
+      "ledger": 5899481,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/c4a396358c803229a76ea869c84ea0dfe07fa2e1a92886a3cef492c5f1a76f98"
+    },
+    {
+      "hash": "ca8c8c73c8ed6075deb82b8d272e3b34586f9db6bd454f06fba6cfcf60156d80",
+      "purpose": "E7: countersign pkg-2026-01-03-2026-01-03",
+      "ledger": 5899482,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/ca8c8c73c8ed6075deb82b8d272e3b34586f9db6bd454f06fba6cfcf60156d80"
+    },
+    {
+      "hash": "1043275608eb850b3638f346f2a4951cbd3f5367f82121c2e51a1c48409f4eaa",
+      "purpose": "E8: attest pkg-2026-01-21-2026-01-21",
+      "ledger": 5899483,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/1043275608eb850b3638f346f2a4951cbd3f5367f82121c2e51a1c48409f4eaa"
+    },
+    {
+      "hash": "c791acdd5448e68174e720867d9ac6af9119a6cf95c9c7347e846d8086d80586",
+      "purpose": "E8: countersign pkg-2026-01-21-2026-01-21",
+      "ledger": 5899484,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/c791acdd5448e68174e720867d9ac6af9119a6cf95c9c7347e846d8086d80586"
+    },
+    {
+      "hash": "6b52012ef37b42b166f1ff60b44b130457b731e5a1bb1d2546b972574410fbde",
+      "purpose": "E9: attest pkg-2026-01-20-2026-01-20",
+      "ledger": 5899485,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/6b52012ef37b42b166f1ff60b44b130457b731e5a1bb1d2546b972574410fbde"
+    },
+    {
+      "hash": "504b0dcb966811ab46d6e8206c37da80c2273402fca4ec94998667941f63cdaf",
+      "purpose": "E9: countersign pkg-2026-01-20-2026-01-20",
+      "ledger": 5899486,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/504b0dcb966811ab46d6e8206c37da80c2273402fca4ec94998667941f63cdaf"
+    },
+    {
+      "hash": "bfa91ce9cb7bd464d3db76b6eb05fe90eb68c6c82eae0fcf51b2484f07fff71a",
+      "purpose": "E10: attest pkg-2026-01-05-2026-01-05",
+      "ledger": 5899487,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/bfa91ce9cb7bd464d3db76b6eb05fe90eb68c6c82eae0fcf51b2484f07fff71a"
+    },
+    {
+      "hash": "9da6395177af6915680e488fe9ccabe63ab2871718e9c0cf46cf34022a5b2251",
+      "purpose": "E10: countersign pkg-2026-01-05-2026-01-05",
+      "ledger": 5899488,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/9da6395177af6915680e488fe9ccabe63ab2871718e9c0cf46cf34022a5b2251"
+    },
+    {
+      "hash": "2f77a3cd05fc4b6da7ee646bb7d8ab87dc91353cd3b73c20ed25c7599742a5eb",
+      "purpose": "Look-alike: authorize signer",
+      "ledger": 5899490,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/2f77a3cd05fc4b6da7ee646bb7d8ab87dc91353cd3b73c20ed25c7599742a5eb"
+    },
+    {
+      "hash": "04d46e6a44720607bf81f078a321c0f158f9b64329404698796f6c4b842df619",
+      "purpose": "Look-alike: attest forged package",
+      "ledger": 5899491,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/04d46e6a44720607bf81f078a321c0f158f9b64329404698796f6c4b842df619"
+    },
+    {
+      "hash": "682a91ce4891a2f7637815925204f3d955ffe825a3dff215ae842535c3c5466d",
+      "purpose": "Re-attest pkg-2026-01-01-2026-01-01 as version 2",
+      "ledger": 5899492,
+      "explorer": "https://stellar.expert/explorer/testnet/tx/682a91ce4891a2f7637815925204f3d955ffe825a3dff215ae842535c3c5466d"
+    }
+  ],
+  "contract": {
+    "id": "CCP6DCRYYXCCWHAHKMZMRRADVOEZYW5BSGVFUTLDUU5TFP26LL2NN6L5",
+    "admin": "GAFUUTARQY2GS3UTTWG7BZ3VLYNJBOVT5LYYYKDELU2Z3V6RQNSC3BHT",
+    "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+    "countersigner": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+    "lookalike": "CBFI7UUSFMMJADUPOXGFPTN6E77GF6FRTHHUY22KMA3LDSHK7I7JENL4",
+    "explorer": "https://stellar.expert/explorer/testnet/contract/CCP6DCRYYXCCWHAHKMZMRRADVOEZYW5BSGVFUTLDUU5TFP26LL2NN6L5",
+    "public_contract": "CC734HZAIWGKKFFD5CZNY73EC3YJJZYDK6IJQQLCZUOSD34U3SY33ZTH",
+    "org": "org_1af1d73aa083427deb0aa9fa40fa9161"
+  },
+  "finished_at": "2026-11-24T11:51:56.972Z",
+  "aborted": null,
+  "summary": {
+    "total": 47,
+    "passed": 47,
+    "failed": 0,
+    "e2e_runs_passed": 10
+  }
+}

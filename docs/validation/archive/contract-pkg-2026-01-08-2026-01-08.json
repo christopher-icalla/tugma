@@ -1,0 +1,19 @@
+{
+  "contract": "CCP6DCRYYXCCWHAHKMZMRRADVOEZYW5BSGVFUTLDUU5TFP26LL2NN6L5",
+  "read": "verify(hash)",
+  "hash": "b8b59535068edf8531231facdd5c2ef7549a07d7d27278df896664eae5fb3bac",
+  "read_at": "2026-11-24T11:50:45.343Z",
+  "attestation": {
+    "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+    "package_id": "pkg-2026-01-08-2026-01-08",
+    "version": 1,
+    "hash": "b8b59535068edf8531231facdd5c2ef7549a07d7d27278df896664eae5fb3bac",
+    "period_start": "2026-01-08",
+    "period_end": "2026-01-08",
+    "attester": "GBQ5I3QWHUZRH7VGJQVNLZJRM5RXIDHJG4VFSYXZJ2A265WA2HJ76JRA",
+    "attested_at": "2026-11-24T11:50:37.000Z",
+    "attested_ledger": 5899479,
+    "verifier": "GB5IBIY7OCPFQAUG2BSPQ7S2GJTYGJA5HL7TQVX72Q3DNAX2MRJSZKZN",
+    "verified_at": "2026-11-24T11:50:42.000Z"
+  }
+}

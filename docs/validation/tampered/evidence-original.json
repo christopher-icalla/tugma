@@ -1,0 +1,16 @@
+{
+  "format": "tugma.evidence-item",
+  "format_version": 1,
+  "evidence_id": "evd-4f069de5f4",
+  "org": "org_1af1d73aa083427deb0aa9fa40fa9161",
+  "captured_at": "2026-11-24T11:49:45.359Z",
+  "hash_input": {
+    "name": "Settlement adjustment record",
+    "type": "DOCUMENT",
+    "content": "Synthetic adjustment for TX-847291",
+    "source": ""
+  },
+  "canonical_hash_input": "{\"content\":\"Synthetic adjustment for TX-847291\",\"name\":\"Settlement adjustment record\",\"source\":\"\",\"type\":\"DOCUMENT\"}",
+  "content_hash": "13cab3e4e5bbb4c88d2f0d721b9c12177550bd507d72240144b922e526925065",
+  "manifest_entry": "evd-4f069de5f4:13cab3e4e5bbb4c88d2f0d721b9c12177550bd507d72240144b922e526925065"
+}
