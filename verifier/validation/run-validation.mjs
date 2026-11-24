@@ -262,6 +262,8 @@ async function main() {
       step("Attested on Testnet with transaction reference", /^[0-9a-f]{64}$/.test(att.transaction_hash ?? "") && att.version === 1, att.transaction_hash);
       const selfSim = await simulate(attester.publicKey(), call(C, "countersign", A(attester.publicKey()), S(org), S(pkg.id), sdk.nativeToScVal(1, { type: "u32" })));
       step("Self-countersignature rejected by the contract", selfSim === "Error(Contract, #5)", selfSim);
+      const same = await http("compliance", "POST", `/api/stellar/packages/${pkg.id}/countersign/prepare`);
+      step("The attesting user cannot countersign through the API", same.status === 403, `HTTP ${same.status}`);
       const cs = await signSubmit("risk", countersigner, `/api/stellar/packages/${pkg.id}/countersign/prepare`);
       step("Countersigned by a different wallet", cs.verifier_address === countersigner.publicKey());
       const synced = (await ok("compliance", "POST", `/api/stellar/packages/${pkg.id}/sync`)).attestations.find((x) => x.version === 1);
@@ -292,7 +294,6 @@ async function main() {
   // Access and segregation of duties.
   for (const who of ["auditor", "viewer"]) check(results.access, `A-${who}`, `${who} cannot prepare an attestation`, 403, (await http(who, "POST", `/api/stellar/packages/${orig.package_id}/attest/prepare`)).status);
   check(results.access, "A-anon", "export without a session", 401, (await http("nobody", "GET", `/api/evidence-packages/${orig.package_id}/export`)).status);
-  check(results.access, "A-compliance", "the attesting user cannot countersign", 403, (await http("compliance", "POST", `/api/stellar/packages/${orig.package_id}/countersign/prepare`)).status);
 
   // Contract rejections, by simulation against live state.
   const u32 = (n) => sdk.nativeToScVal(n, { type: "u32" });
