@@ -76,8 +76,11 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase, 
      * `signer_changed` events, oldest first. Soroban RPC keeps events for a
      * limited window (about seven days on Testnet), so `from_ledger` says how
      * far back the list goes; older changes are not visible this way.
+     * One request scans only part of that window (about 10,000 ledgers), so a
+     * short or empty page is not the end: the cursor is followed to the latest
+     * ledger. Throws rather than return a partial list.
      */
-    async signerChanges(org, { maxPages = 10 } = {}) {
+    async signerChanges(org, { maxPages = 100 } = {}) {
       const health = await withRetry(() => rpcServer.getHealth());
       const fromLedger = Number(health.oldestLedger) + 1;
       const filters = [{
@@ -87,6 +90,8 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase, 
       }];
       const changes = [];
       let cursor;
+      let latest = Number(health.latestLedger);
+      let complete = false;
       for (let page = 0; page < maxPages; page++) {
         const res = await withRetry(() => rpcServer.getEvents(cursor ? { filters, cursor, limit: 100 } : { startLedger: fromLedger, filters, limit: 100 }));
         for (const ev of res.events ?? []) {
@@ -99,10 +104,18 @@ export function createChainReader(sdk, { rpcUrl, contractId, networkPassphrase, 
             tx_hash: ev.txHash ?? null,
           });
         }
-        if (!res.events?.length || res.events.length < 100 || !res.cursor) break;
+        const scanned = cursorLedger(res.cursor);
+        const full = (res.events?.length ?? 0) >= 100;
+        // A load-balanced RPC may answer from a node slightly behind the one that gave its health.
+        latest = Math.min(latest, Number(res.latestLedger ?? latest));
+        if (scanned === null || res.cursor === cursor || (!full && scanned >= latest)) {
+          complete = scanned !== null && scanned >= latest;
+          break;
+        }
         cursor = res.cursor;
       }
-      return { from_ledger: fromLedger, latest_ledger: Number(health.latestLedger), changes };
+      if (!complete) throw new Error("the RPC did not return signer changes up to the latest ledger");
+      return { from_ledger: fromLedger, latest_ledger: latest, changes };
     },
     /** SEP-53: was `message` signed by the Stellar account `address`? (signature in base64) */
     verifySignedMessage(address, message, signatureB64) {
@@ -131,6 +144,12 @@ export async function withRetry(call, attempts = 3, delayMs = 500) {
       await new Promise((r) => setTimeout(r, delayMs * i));
     }
   }
+}
+
+/** The ledger an event cursor ("<toid>-<index>") has reached, or null if it has none. */
+function cursorLedger(cursor) {
+  const m = /^(\d+)-\d+$/.exec(String(cursor ?? ""));
+  return m ? Number(BigInt(m[1]) >> 32n) : null;
 }
 
 function base64ToBytes(b64) {

@@ -51,6 +51,36 @@ test("a clean history is ok, and an RPC event failure is only a note", async () 
   assert.equal((await auditSigners(fakeChain(), ORG, "pkg-none")).ok, false);
 });
 
+const cursorAt = (ledger) => `${(BigInt(ledger) << 32n).toString().padStart(19, "0")}-4294967295`;
+
+test("signerChanges follows the cursor past empty pages to the latest ledger", async () => {
+  const value = sdk.nativeToScVal({ authorized: true, signer: new sdk.Address(A) });
+  const pages = [
+    { events: [], cursor: cursorAt(15000) },
+    { events: [], cursor: cursorAt(25000) },
+    { events: [{ ledger: 26000, txHash: "ab".repeat(32), value }], cursor: cursorAt(30000) },
+  ];
+  const seen = [];
+  const server = {
+    async getHealth() { return { oldestLedger: 5000, latestLedger: 30000 }; },
+    async getEvents(req) { seen.push(req); return pages[seen.length - 1]; },
+  };
+  const reader = createChainReader(sdk, { rpcUrl: "https://rpc.invalid", contractId: CONTRACT, networkPassphrase: sdk.Networks.TESTNET }, server);
+  const r = await reader.signerChanges(ORG);
+  assert.deepEqual(r.changes.map((c) => c.ledger), [26000]);
+  assert.deepEqual(seen.map((q) => q.cursor), [undefined, cursorAt(15000), cursorAt(25000)]);
+  await assert.rejects(reader.signerChanges(ORG, { maxPages: 0 }), /up to the latest ledger/);
+});
+
+test("signerChanges refuses a partial list when the cursor stops moving", async () => {
+  const server = {
+    async getHealth() { return { oldestLedger: 5000, latestLedger: 30000 }; },
+    async getEvents() { return { events: [], cursor: cursorAt(15000) }; },
+  };
+  const reader = createChainReader(sdk, { rpcUrl: "https://rpc.invalid", contractId: CONTRACT, networkPassphrase: sdk.Networks.TESTNET }, server);
+  await assert.rejects(reader.signerChanges(ORG), /up to the latest ledger/);
+});
+
 test("signerChanges reads signer_changed events through Soroban RPC", async () => {
   const seen = [];
   const server = {
@@ -58,7 +88,7 @@ test("signerChanges reads signer_changed events through Soroban RPC", async () =
     async getEvents(req) {
       seen.push(req);
       const value = sdk.nativeToScVal({ authorized: true, signer: new sdk.Address(A) });
-      return { events: [{ ledger: 6000, ledgerClosedAt: "2026-11-15T01:02:03Z", txHash: "cd".repeat(32), value }], cursor: "x" };
+      return { events: [{ ledger: 6000, ledgerClosedAt: "2026-11-15T01:02:03Z", txHash: "cd".repeat(32), value }], cursor: cursorAt(9000) };
     },
   };
   const reader = createChainReader(sdk, { rpcUrl: "https://rpc.invalid", contractId: CONTRACT, networkPassphrase: sdk.Networks.TESTNET }, server);
